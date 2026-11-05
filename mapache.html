@@ -1,0 +1,1008 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tata · VTuber mapache</title>
+<style>
+:root{
+  --papel:#f3ebdd; --papel2:#faf5ec; --tinta:#1e181c; --tinta2:#5b4f52; --almagre:#a8452f; --almagre2:#c8664a;
+  --linea:#d9ccb6; --campo:#fffdf8; --ok:#3f7d4e; --mal:#a8452f;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:transparent}
+body.ajedrez{background:#cfc6b8 repeating-conic-gradient(#dcd4c8 0 25%,#cfc6b8 0 50%) 0 0/32px 32px}
+canvas#lienzo{position:fixed;inset:0;width:100vw;height:100vh;display:block;image-rendering:pixelated}
+#engranaje{position:fixed;top:14px;right:14px;z-index:5;width:44px;height:44px;border-radius:50%;border:2px solid var(--tinta);
+  background:var(--papel2);color:var(--tinta);font:22px/1 Georgia,serif;cursor:pointer;opacity:0;transition:opacity .35s;box-shadow:0 2px 0 var(--tinta)}
+#engranaje.ver{opacity:1}
+#aviso{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:6;display:none;background:#000;color:#fff;
+  border:4px solid #fff;padding:18px 26px;font:16px/1.4 ui-monospace,Menlo,Consolas,monospace;cursor:pointer;text-align:center;max-width:90vw}
+#aviso.ver{display:block}
+#panel{position:fixed;top:0;right:0;bottom:0;width:min(380px,100vw);z-index:7;background:var(--papel);color:var(--tinta);
+  border-left:2px solid var(--tinta);overflow-y:auto;transform:translateX(105%);transition:transform .3s ease;
+  font:14px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;box-shadow:-6px 0 24px rgba(30,24,28,.18)}
+#panel.abierto{transform:none}
+#panel header{position:sticky;top:0;z-index:2;background:var(--papel);padding:16px 18px 10px;border-bottom:2px solid var(--tinta)}
+#panel h1{font:700 22px/1.15 Georgia,"Iowan Old Style",serif;margin:0 0 2px}
+#panel header p{margin:0;color:var(--tinta2);font:italic 13px/1.4 Georgia,serif}
+#cerrar{position:absolute;top:12px;right:12px;border:2px solid var(--tinta);background:var(--papel2);width:32px;height:32px;border-radius:50%;cursor:pointer;font:18px/1 Georgia,serif}
+details{border-bottom:1px solid var(--linea);padding:0 18px}
+summary{cursor:pointer;list-style:none;padding:13px 0;font:700 16px/1.2 Georgia,serif;display:flex;align-items:center;gap:8px}
+summary::-webkit-details-marker{display:none}
+summary::before{content:"";width:8px;height:8px;background:var(--almagre);transform:rotate(45deg);transition:transform .2s;flex:none}
+details[open]>summary::before{transform:rotate(0)}
+.cuerpo{padding:0 0 14px}
+label.f{display:grid;grid-template-columns:1fr auto;align-items:center;gap:4px 10px;margin:9px 0}
+label.f>span{font-weight:600}
+label.f>small,.nota{grid-column:1/-1;color:var(--tinta2);font-size:12.5px}
+.nota{display:block;margin:6px 0}
+label.f input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--almagre)}
+label.f output{font:12px ui-monospace,Menlo,Consolas,monospace;color:var(--tinta2)}
+select,input[type=text],input[type=number],textarea{font:inherit;color:var(--tinta);background:var(--campo);border:1.5px solid var(--tinta);border-radius:6px;padding:5px 8px;min-width:0}
+textarea{width:100%;resize:vertical;min-height:84px}
+input[type=color]{width:46px;height:30px;border:1.5px solid var(--tinta);border-radius:6px;background:var(--campo);padding:2px}
+label.c{display:flex;align-items:center;gap:8px;margin:8px 0;cursor:pointer}
+label.c input{accent-color:var(--almagre);width:17px;height:17px}
+.fila{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+button.b{font:600 13px/1 system-ui,sans-serif;color:var(--tinta);background:var(--papel2);border:1.5px solid var(--tinta);border-radius:6px;padding:8px 10px;cursor:pointer;box-shadow:0 2px 0 var(--tinta)}
+button.b:active{transform:translateY(2px);box-shadow:none}
+button.b.on{background:var(--almagre);color:#fff}
+button.b kbd{font:11px ui-monospace,monospace;opacity:.75;margin-left:4px}
+.exp{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.medidor{position:relative;height:22px;border:1.5px solid var(--tinta);border-radius:5px;background:var(--campo);overflow:hidden;margin:8px 0 2px}
+.medidor canvas{width:100%;height:100%;display:block}
+.estado{display:flex;align-items:center;gap:8px;margin:6px 0;font-size:13px}
+.punto{width:10px;height:10px;border-radius:50%;background:#b9ab96;flex:none}
+.punto.ok{background:var(--ok)} .punto.mal{background:var(--mal)}
+.oculto{display:none!important}
+footer{padding:14px 18px 22px;color:var(--tinta2);font:italic 12.5px/1.5 Georgia,serif}
+kbd.t{font:12px ui-monospace,monospace;background:var(--campo);border:1px solid var(--tinta2);border-bottom-width:2px;border-radius:4px;padding:0 4px}
+table.atajos{border-collapse:collapse;width:100%;font-size:13px}
+table.atajos td{padding:3px 0;border-bottom:1px dotted var(--linea)}
+table.atajos td:first-child{white-space:nowrap;padding-right:10px}
+@media (prefers-reduced-motion:reduce){#panel{transition:none}}
+</style>
+</head>
+<body>
+<canvas id="lienzo"></canvas>
+<button id="engranaje" title="Configurar (H)" aria-label="Abrir la configuración">⚙</button>
+<div id="aviso" role="button" tabindex="0">* Haz clic para activar el micrófono</div>
+
+<aside id="panel" aria-label="Configuración">
+  <header>
+    <h1>Tata · mapache VTuber</h1>
+    <p>Estilo Almagre Studios. Pulsa <kbd class="t">H</kbd> para ocultar este panel.</p>
+    <button id="cerrar" aria-label="Cerrar">×</button>
+  </header>
+
+  <details open><summary>Micrófono</summary><div class="cuerpo">
+    <label class="f"><span>Micrófono</span><select data-k="micId" id="selMic"><option value="">Predeterminado</option></select></label>
+    <div class="medidor"><canvas id="medidor" width="340" height="22"></canvas></div>
+    <span class="nota" id="micEstado">Sin micrófono todavía.</span>
+    <label class="f"><span>Abre la boca a partir de</span><output data-o="umbral"></output>
+      <input type="range" data-k="umbral" min="-80" max="-5" step="1"><small>La raya roja del medidor. Si se mueve con el ruido de fondo, súbela.</small></label>
+    <label class="f"><span>Boca muy abierta (+dB)</span><output data-o="abierta"></output>
+      <input type="range" data-k="abierta" min="3" max="30" step="1"></label>
+    <label class="f"><span>Suavizado</span><output data-o="suave"></output>
+      <input type="range" data-k="suave" min="0" max="1" step="0.05"><small>Más alto = la boca tarda más en cerrarse.</small></label>
+    <label class="f"><span>Rebote al hablar</span><select data-k="rebote"><option value="0">Nada</option><option value="1">Suave</option><option value="2">Saltarín</option></select></label>
+    <div class="fila"><button class="b" id="calibrar">Calibrar (2 s en silencio)</button><button class="b" id="silenciar">Silenciar <kbd>M</kbd></button></div>
+  </div></details>
+
+  <details open><summary>Mapache</summary><div class="cuerpo">
+    <label class="f"><span>Nombre</span><input type="text" data-k="nombre" maxlength="24"></label>
+    <label class="f"><span>Pelaje</span><select data-k="pelaje">
+      <option value="gris">Gris clásico</option><option value="marron">Marrón tierra</option><option value="rojizo">Rojizo</option>
+      <option value="nieve">Nieve</option><option value="medianoche">Medianoche</option><option value="propio">Mi color…</option></select></label>
+    <label class="f" id="filaPelaje"><span>Color del pelaje</span><input type="color" data-k="pelajeColor"></label>
+    <label class="f"><span>Cabeza</span><select data-k="cabeza">
+      <option value="auriculares">Auriculares con micro</option><option value="gorro">Gorro de lana</option><option value="gorra">Gorra</option>
+      <option value="lazo">Lazo en la oreja</option><option value="ninguno">Nada</option></select></label>
+    <label class="f"><span>Cara</span><select data-k="cara"><option value="ninguna">Nada</option><option value="gafas">Gafas redondas</option></select></label>
+    <label class="f"><span>Cuello</span><select data-k="cuello"><option value="ninguno">Nada</option><option value="bufanda">Bufanda</option><option value="pajarita">Pajarita</option></select></label>
+    <label class="f"><span>Color de los accesorios</span><input type="color" data-k="acento"></label>
+    <label class="c"><input type="checkbox" data-k="rubor"> Mejillas sonrosadas</label>
+    <label class="c"><input type="checkbox" data-k="parpadeo"> Parpadea solo</label>
+    <label class="c"><input type="checkbox" data-k="respirar"> Respira y mueve la cola</label>
+  </div></details>
+
+  <details open><summary>Expresión</summary><div class="cuerpo">
+    <div class="exp" id="botExp"></div>
+    <label class="f"><span>Volver a normal tras (s)</span><input type="number" data-k="expDur" min="0" max="600" step="1" style="width:80px"><small>0 = se queda puesta.</small></label>
+    <label class="f"><span>Se duerme si no hablas (min)</span><input type="number" data-k="suenoMin" min="0" max="120" step="1" style="width:80px"><small>0 = nunca.</small></label>
+  </div></details>
+
+  <details open><summary>Ratón, teclado y mando</summary><div class="cuerpo">
+    <label class="f"><span>Enseñar</span><select data-k="disp">
+      <option value="auto">Lo último que uses</option><option value="raton">Ratón y teclado</option><option value="mando">Mando</option><option value="nada">Nada (patas quietas)</option></select></label>
+    <label class="c"><input type="checkbox" data-k="mirar"> Mira hacia el cursor</label>
+    <label class="c"><input type="checkbox" data-k="espejo"> Espejo (ratón a la izquierda)</label>
+    <div class="estado"><span class="punto" id="ptMando"></span><span id="txtMando">Mando: pulsa un botón para que lo detecte.</span></div>
+    <div class="estado"><span class="punto" id="ptAyud"></span><span id="txtAyud">Ayudante: apagado.</span></div>
+    <label class="c"><input type="checkbox" data-k="ayudante"> Conectar con el ayudante</label>
+    <label class="f"><span>Puerto del ayudante</span><input type="number" data-k="puerto" min="1024" max="65535" style="width:96px"></label>
+    <span class="nota">El navegador solo ve el ratón cuando está encima de esta ventana. Para que el mapache lo siga en todo el escritorio (y en OBS), ejecuta <b>ayudante.py</b>. Mira el README.</span>
+  </div></details>
+
+  <details open><summary>Escena</summary><div class="cuerpo">
+    <label class="f"><span>Fondo</span><select data-k="fondo">
+      <option value="transparente">Transparente (OBS)</option><option value="croma">Croma</option><option value="almagre">Cuarto de Almagre</option></select></label>
+    <label class="f" id="filaCroma"><span>Color del croma</span><input type="color" data-k="croma"></label>
+    <label class="f" id="filaHora"><span>Hora</span><select data-k="hora"><option value="tarde">Tarde dorada</option><option value="dia">Día</option><option value="noche">Noche con neón</option></select></label>
+    <label class="f" id="filaMesa"><span>Escritorio</span><select data-k="mesa"><option value="madera">Madera</option><option value="blanco">Blanco</option><option value="oscuro">Oscuro</option></select></label>
+    <label class="f"><span>Tamaño del píxel</span><output data-o="tam"></output>
+      <input type="range" data-k="tam" min="0" max="24" step="1"><small>0 = automático.</small></label>
+    <label class="f"><span>Posición horizontal</span><output data-o="posX"></output>
+      <input type="range" data-k="posX" min="0" max="1" step="0.01"></label>
+    <label class="c"><input type="checkbox" data-k="cartel"> Cartel con el nombre</label>
+    <label class="f"><span>Subtítulo del cartel</span><input type="text" data-k="subtitulo" maxlength="32" placeholder="p. ej. EN DIRECTO"></label>
+  </div></details>
+
+  <details><summary>Bocadillo</summary><div class="cuerpo">
+    <span class="nota">La caja de diálogo de Almagre. Una frase por línea; se muestran con los botones o con <kbd class="t">9</kbd> (la siguiente).</span>
+    <textarea data-k="frases"></textarea>
+    <div class="fila" id="botFrases"></div>
+    <label class="f"><span>Segundos en pantalla</span><input type="number" data-k="bocSeg" min="1" max="60" step="1" style="width:80px"></label>
+    <label class="f"><span>Dónde</span><select data-k="bocPos"><option value="arriba">Arriba</option><option value="abajo">Abajo</option></select></label>
+    <label class="c"><input type="checkbox" data-k="bleeps"> Bleeps de 8 bits al escribir</label>
+  </div></details>
+
+  <details><summary>Guardar y atajos</summary><div class="cuerpo">
+    <span class="nota">Los ajustes se guardan solos en este navegador. Para llevarlos a otro (por ejemplo, de Chrome a OBS), expórtalos e impórtalos.</span>
+    <div class="fila"><button class="b" id="exportar">Exportar</button><button class="b" id="importar">Importar</button><button class="b" id="restablecer">Restablecer</button></div>
+    <input type="file" id="archivo" accept="application/json,.json" class="oculto">
+    <label class="c"><input type="checkbox" id="demo"> Modo demostración (sin micro ni ratón)</label>
+    <table class="atajos">
+      <tr><td><kbd class="t">H</kbd></td><td>Mostrar u ocultar el panel</td></tr>
+      <tr><td><kbd class="t">1</kbd>…<kbd class="t">8</kbd></td><td>Expresiones</td></tr>
+      <tr><td><kbd class="t">0</kbd></td><td>Volver a normal</td></tr>
+      <tr><td><kbd class="t">9</kbd></td><td>Siguiente frase del bocadillo</td></tr>
+      <tr><td><kbd class="t">M</kbd></td><td>Silenciar la boca</td></tr>
+      <tr><td><kbd class="t">Ctrl</kbd>+<kbd class="t">Alt</kbd>+número</td><td>Lo mismo desde cualquier programa (con el ayudante)</td></tr>
+    </table>
+  </div></details>
+  <footer>Pixel de 8 bits sobre acuarela, como en las películas de Almagre Studios. Un solo HTML, sin librerías.</footer>
+</aside>
+
+<script>
+'use strict';
+/* =====================================================================
+   TATA · VTUBER MAPACHE AL ESTILO ALMAGRE
+   El mapache es un sprite de 8 bits (contorno K, sin suavizado, rubor, ojos 3×2 con brillo) que se arma
+   cada cuadro en una cuadrícula de 64×64 celdas y se escala en píxeles enteros. El fondo «Cuarto de
+   Almagre» se pinta una vez en acuarela (nada de ctx.filter por cuadro). Todo lo que se mueve solo
+   (parpadeo, respiración, cola, motas) es función del tiempo t; lo que viene de fuera (micro, ratón,
+   mando) se suaviza con dt.
+   ===================================================================== */
+const TAU = Math.PI * 2;
+const clamp = (v, a = 0, b = 1) => v < a ? a : v > b ? b : v;
+const lerp = (a, b, t) => a + (b - a) * t;
+const mk = (w, h) => { const c = document.createElement('canvas'); c.width = Math.max(1, w | 0); c.height = Math.max(1, h | 0); return c; };
+const hsh = (a, b = 0) => { const x = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return x - Math.floor(x); };
+function N2(x, y) { const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi, u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  return lerp(lerp(hsh(xi, yi), hsh(xi + 1, yi), u), lerp(hsh(xi, yi + 1), hsh(xi + 1, yi + 1), u), v) - .5; }
+function FBM(x, y, o = 4) { let s = 0, a = .5, f = 1; for (let i = 0; i < o; i++) { s += N2(x * f, y * f) * a; f *= 2; a *= .5; } return s; }
+const hex2rgb = h => { h = (h || '#000').replace('#', ''); if (h.length === 3) h = h.split('').map(c => c + c).join(''); const n = parseInt(h, 16); return [(n >> 16) & 255, (n >> 8) & 255, n & 255]; };
+const mixc = (a, b, t) => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
+const shc = (c, k) => k < 0 ? mixc(c, [20, 14, 24], -k) : mixc(c, [255, 255, 255], k);
+const css = (c, a = 1) => `rgba(${c[0] | 0},${c[1] | 0},${c[2] | 0},${a})`;
+const ahora = () => performance.now() / 1000;
+
+/* ---------------------------------------------------------------------
+   AJUSTES (se guardan en localStorage; si el navegador no deja, funciona igual sin guardar)
+   --------------------------------------------------------------------- */
+const DEF = {
+  nombre: 'Tata', subtitulo: '', cartel: true,
+  pelaje: 'gris', pelajeColor: '#8d8a99', cabeza: 'auriculares', cara: 'ninguna', cuello: 'ninguno', acento: '#d0533f',
+  rubor: true, parpadeo: true, respirar: true,
+  micId: '', umbral: -46, abierta: 12, suave: .45, rebote: '1', silencio: false,
+  expDur: 0, suenoMin: 0,
+  disp: 'auto', mirar: true, espejo: false, ayudante: true, puerto: 8765,
+  fondo: 'transparente', croma: '#00b140', hora: 'tarde', mesa: 'madera', tam: 0, posX: .5,
+  frases: '¡Hola, chat!\n¡Gracias por el follow!\nVuelvo enseguida…\n¡Cuac! (perdón, ese era Ramiro)', bocSeg: 6, bocPos: 'arriba', bleeps: false,
+};
+const CLAVE = 'tata-vtuber-mapache-v1';
+let S = { ...DEF };
+try { const g = JSON.parse(localStorage.getItem(CLAVE) || 'null'); if (g && typeof g === 'object') S = { ...DEF, ...g }; } catch (e) { /* sin almacenamiento */ }
+function guardar() { try { localStorage.setItem(CLAVE, JSON.stringify(S)); } catch (e) { /* sin almacenamiento */ } }
+const Q = new URLSearchParams(location.search);
+for (const [k, v] of Q) if (k in DEF) S[k] = typeof DEF[k] === 'number' ? +v : typeof DEF[k] === 'boolean' ? v !== '0' && v !== 'false' : v;
+
+/* ---------------------------------------------------------------------
+   PALETA DEL SPRITE (letra → color). El contorno K y el rubor E son los del elenco de Almagre.
+   --------------------------------------------------------------------- */
+const PELAJES = {
+  gris:       { G: [152, 149, 160], g: [112, 108, 124], M: [66, 60, 74], W: [240, 236, 228], w: [204, 198, 194], I: [104, 86, 98], H: [72, 64, 74], h: [52, 46, 56] },
+  marron:     { G: [160, 128, 98], g: [122, 92, 70], M: [66, 48, 42], W: [244, 234, 216], w: [210, 196, 174], I: [118, 80, 70], H: [74, 56, 48], h: [54, 40, 36] },
+  rojizo:     { G: [204, 112, 62], g: [158, 78, 44], M: [78, 42, 36], W: [248, 236, 218], w: [214, 196, 176], I: [140, 70, 56], H: [76, 46, 40], h: [56, 34, 30] },
+  nieve:      { G: [228, 226, 234], g: [188, 186, 200], M: [116, 112, 132], W: [255, 255, 255], w: [216, 214, 222], I: [214, 150, 162], H: [128, 122, 140], h: [100, 96, 112] },
+  medianoche: { G: [88, 96, 132], g: [62, 68, 100], M: [40, 38, 58], W: [214, 220, 238], w: [170, 178, 204], I: [120, 90, 130], H: [48, 46, 66], h: [36, 34, 50] },
+};
+function pelajePropio(hex) {
+  const c = hex2rgb(hex);
+  return { G: c, g: shc(c, -.26), M: shc(c, -.62), W: shc(c, .86), w: shc(c, .62), I: mixc(shc(c, -.35), [200, 120, 140], .35), H: shc(c, -.55), h: shc(c, -.68) };
+}
+const MESAS = {
+  madera: { Y: [198, 142, 92], y: [170, 114, 72], Z: [140, 90, 58], z: [112, 70, 46] },
+  blanco: { Y: [238, 234, 226], y: [216, 210, 200], Z: [192, 186, 178], z: [162, 156, 150] },
+  oscuro: { Y: [74, 70, 84], y: [60, 56, 70], Z: [46, 42, 54], z: [36, 32, 42] },
+};
+let PAL = new Map();
+function hacerPaleta() {
+  const f = S.pelaje === 'propio' ? pelajePropio(S.pelajeColor) : PELAJES[S.pelaje] || PELAJES.gris;
+  const A = hex2rgb(S.acento), m = MESAS[S.mesa] || MESAS.madera;
+  const p = {
+    K: [30, 24, 28], T: [255, 255, 255], E: [244, 142, 128], P: [236, 92, 124], B: [110, 190, 255], V: [116, 108, 120],
+    D: [92, 30, 42], R: [232, 104, 120], F: [226, 184, 84],
+    A, a: shc(A, -.3), X: shc(A, .45),
+    Q: [58, 56, 70], q: [210, 206, 214], L: [236, 234, 240], l: [184, 182, 196], N: [52, 70, 84], n: [38, 52, 64],
+    C: [70, 72, 88], c: [50, 52, 66], k: [34, 32, 42], J: [150, 150, 166],
+    1: [244, 200, 64], 2: [222, 70, 70], 3: [96, 196, 98], 4: [80, 140, 230],
+    ...f, ...m,
+  };
+  PAL = new Map(Object.entries(p).map(([k, v]) => [k, [v[0] | 0, v[1] | 0, v[2] | 0, v[3] ?? 255]]));
+}
+
+/* ---------------------------------------------------------------------
+   CUADRÍCULA: la escena del sprite es de 64×64 celdas. part() pinta una pieza en una capa aparte,
+   le pone su contorno K (vecindad de 4, esquinas redondeadas como en el elenco) y la pega encima.
+   --------------------------------------------------------------------- */
+const SW = 64, SH = 64, MESA_Y = 46;
+class Rejilla {
+  constructor(w, h) { this.w = w; this.h = h; this.a = new Array(w * h).fill(''); }
+  clear() { this.a.fill(''); }
+  set(x, y, c) { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < this.w && y < this.h) this.a[y * this.w + x] = c; }
+  get(x, y) { return x >= 0 && y >= 0 && x < this.w && y < this.h ? this.a[y * this.w + x] : ''; }
+  stamp(rows, x0, y0) { rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') this.set(x0 + i, y0 + j, r[i]); }); }
+  pegar(o, ox, oy) { for (let y = 0; y < o.h; y++) for (let x = 0; x < o.w; x++) { const c = o.a[y * o.w + x]; if (c) this.set(x + ox, y + oy, c); } }
+}
+const ESC = new Rejilla(SW, SH), CAPA = new Rejilla(SW, SH), BORDE = new Array(SW * SH);
+/* pincel de una capa */
+const pin = g => ({
+  p: (x, y, c) => g.set(x, y, c),
+  disco(cx, cy, r, c) { for (let y = Math.floor(cy - r); y <= Math.ceil(cy + r); y++) for (let x = Math.floor(cx - r); x <= Math.ceil(cx + r); x++) if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r + .2) g.set(x, y, typeof c === 'function' ? c(x, y) : c); },
+  elipse(cx, cy, rx, ry, c) { for (let y = Math.floor(cy - ry); y <= Math.ceil(cy + ry); y++) for (let x = Math.floor(cx - rx); x <= Math.ceil(cx + rx); x++) if (((x - cx) / rx) ** 2 + ((y - cy) / ry) ** 2 <= 1.02) g.set(x, y, typeof c === 'function' ? c(x, y) : c); },
+  rect(x0, y0, x1, y1, c) { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) g.set(x, y, typeof c === 'function' ? c(x, y) : c); },
+  linea(x0, y0, x1, y1, r, c) { const n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) * 2)); for (let i = 0; i <= n; i++) this.disco(lerp(x0, x1, i / n), lerp(y0, y1, i / n), r, c); },
+  stamp: (rows, x0, y0) => rows.forEach((r, j) => { for (let i = 0; i < r.length; i++) if (r[i] !== '.') g.set(x0 + i, y0 + j, r[i]); }),
+});
+function part(dibujo, o = {}) {
+  const g = CAPA; g.clear(); dibujo(pin(g));
+  if (o.borde !== false) {
+    BORDE.fill(false);
+    for (let y = 0; y < SH; y++) for (let x = 0; x < SW; x++) if (!g.a[y * SW + x] && (g.get(x - 1, y) || g.get(x + 1, y) || g.get(x, y - 1) || g.get(x, y + 1))) BORDE[y * SW + x] = true;
+    for (let i = 0; i < BORDE.length; i++) if (BORDE[i]) g.a[i] = 'K';
+  }
+  const cy = o.corte ?? SH;
+  for (let i = 0; i < g.a.length; i++) if (g.a[i] && ((i / SW) | 0) < cy) ESC.a[i] = g.a[i];
+}
+
+/* ---------------------------------------------------------------------
+   LA CABEZA: media cabeza dibujada a mano (17 columnas) y reflejada. 34×23 celdas.
+   G pelo · g sombra/raya · I oreja por dentro · W blanco · M antifaz · K contorno
+   --------------------------------------------------------------------- */
+const CAB_IZQ = [
+  '.....KKKK........',
+  '....KGGGGK.......',
+  '...KGGIIGGK......',
+  '...KGIIIIGGK.....',
+  '...KGIIIIGGGKKKKK',
+  '...KGGIIGGGGGGGGG',
+  '..KGGGGGGGGGGGGGg',
+  '..KGGGGGGGGGGGGGg',
+  '.KGGGGGGGGGGGGGGg',
+  '.KGGGWWWWWGGGGGGg',
+  '.KGWWWWWWWWWGGGGg',
+  'KGGMMMMMMMMMMGGgg',
+  'KGMMMMMMMMMMMMGgg',
+  'KGMMMMMMMMMMMMMgg',
+  'KMMMMMMMMMMMMMWWW',
+  'KWMMMMMMMMMMMWWWW',
+  'KWWMMMMMMMMWWWWWW',
+  '.KWWWMMMMWWWWWWKK',
+  'KWWWWWWWWWWWWWWWK',
+  '.KWWWWWWWWWWWWWWW',
+  '..KWWWWWWWWWWWWWW',
+  '...KKWWWWWWWWWWWW',
+  '.....KKKKKKKKKKKK'];
+const CAB = CAB_IZQ.map(r => r + r.split('').reverse().join(''));
+const HW = 34, HH = 23, HM = 4;                    // margen alrededor para accesorios
+const CABEZA = new Rejilla(HW + HM * 2, HH + HM * 2 + 2);
+const OJOS = [[7, 12], [24, 12]];
+/* pintar en coordenadas de la cabeza base */
+const hs = (x, y, c) => CABEZA.set(x + HM, y + HM, c);
+const hg = (x, y) => CABEZA.get(x + HM, y + HM);
+
+function ojos(exp, ex, ey, cerrado) {
+  OJOS.forEach(([x0, y0], lado) => {
+    const x = x0 + ex, y = y0 + ey, b = 'M';
+    const put = (dx, dy, c) => hs(x + dx, y + dy, c);
+    let tipo = exp;
+    if (exp === 'guino' && lado === 1) tipo = 'feliz';
+    if (cerrado && tipo !== 'feliz' && tipo !== 'enamorado') tipo = 'cerrado';
+    if (tipo === 'cerrado' || tipo === 'dormido') { put(0, 1, 'K'); put(1, 1, 'K'); put(2, 1, 'K'); return; }
+    if (tipo === 'feliz') { put(0, 1, 'K'); put(1, 0, 'K'); put(2, 1, 'K'); return; }
+    if (tipo === 'enamorado') { [['P', b, 'P'], ['P', 'P', 'P'], [b, 'P', b]].forEach((r, j) => r.forEach((c, i) => put(i, j - 1, c))); return; }
+    if (tipo === 'sorpresa') { ['TTT', 'TKT', 'TKT'].forEach((r, j) => r.split('').forEach((c, i) => put(i, j - 1, c))); return; }
+    if (tipo === 'enfadado') { const r = lado ? 'KKb' : 'bKK'; r.split('').forEach((c, i) => put(i, 0, c === 'b' ? b : c)); put(0, 1, 'K'); put(1, 1, 'K'); put(2, 1, 'K'); put(lado ? 0 : 2, 0, 'T'); return; }
+    put(0, 0, 'K'); put(1, 0, 'K'); put(2, 0, 'T'); put(0, 1, 'K'); put(1, 1, 'K'); put(2, 1, 'K');
+    if (tipo === 'triste' && lado === 0) { put(2, 2, 'B'); put(2, 3, 'B'); }
+  });
+  /* cejas en el blanco de encima del antifaz */
+  if (exp === 'enfadado') for (const [x, y] of [[5, 9], [6, 9], [7, 10], [8, 10], [9, 10]]) { hs(x, y, 'K'); hs(HW - 1 - x, y, 'K'); }
+  if (exp === 'triste') for (const [x, y] of [[5, 10], [6, 10], [7, 10], [8, 9], [9, 9]]) { hs(x, y, 'K'); hs(HW - 1 - x, y, 'K'); }
+}
+function boca(nivel, exp) {
+  const K = (x, y) => hs(x, y, 'K');
+  if (nivel === 2) {
+    for (let x = 13; x <= 20; x++) K(x, 19);
+    K(13, 20); K(20, 20); for (let x = 14; x <= 19; x++) hs(x, 20, 'D');
+    K(13, 21); K(20, 21); for (let x = 14; x <= 19; x++) hs(x, 21, x >= 16 && x <= 17 ? 'R' : 'D');
+    K(14, 22); K(19, 22); for (let x = 15; x <= 18; x++) hs(x, 22, 'R');
+    for (let x = 15; x <= 18; x++) K(x, 23);
+    return;
+  }
+  if (nivel === 1) {
+    for (let x = 14; x <= 19; x++) K(x, 19);
+    K(14, 20); K(19, 20); for (let x = 15; x <= 18; x++) hs(x, 20, x === 16 || x === 17 ? 'R' : 'D');
+    for (let x = 15; x <= 18; x++) K(x, 21);
+    return;
+  }
+  if (exp === 'sorpresa') { K(16, 19); K(17, 19); K(15, 20); hs(16, 20, 'D'); hs(17, 20, 'D'); K(18, 20); K(16, 21); K(17, 21); return; }
+  if (exp === 'enfadado') { for (let x = 14; x <= 19; x++) K(x, 20); return; }
+  if (exp === 'triste') { K(16, 19); K(17, 19); for (let x = 14; x <= 19; x++) K(x, 20); K(13, 21); K(20, 21); hs(14, 20, 'W'); hs(19, 20, 'W'); K(14, 21); K(19, 21); return; }
+  if (exp === 'feliz' || exp === 'enamorado' || exp === 'guino') { K(16, 19); K(17, 19); K(13, 19); K(20, 19); K(14, 20); K(19, 20); hs(15, 20, 'D'); hs(16, 20, 'R'); hs(17, 20, 'R'); hs(18, 20, 'D'); K(15, 21); K(16, 21); K(17, 21); K(18, 21); return; }
+  K(16, 19); K(17, 19); K(13, 19); K(20, 19); K(14, 20); K(15, 20); K(18, 20); K(19, 20);   // ω
+}
+/* accesorios de la cabeza: se pintan en una capa con su propio contorno y se pegan sobre la cabeza */
+const ACC = new Rejilla(CABEZA.w, CABEZA.h), ACCB = new Rejilla(CABEZA.w, CABEZA.h);
+function accesorio(dibujo) {
+  ACC.clear(); const P = pin({ set: (x, y, c) => ACC.set(x + HM, y + HM, c) }); dibujo(P);
+  ACCB.clear();
+  for (let y = 0; y < ACC.h; y++) for (let x = 0; x < ACC.w; x++) if (!ACC.get(x, y) && (ACC.get(x - 1, y) || ACC.get(x + 1, y) || ACC.get(x, y - 1) || ACC.get(x, y + 1))) ACCB.set(x, y, 'K');
+  CABEZA.pegar(ACCB, 0, 0); CABEZA.pegar(ACC, 0, 0);
+}
+function armarCabeza(st) {
+  CABEZA.clear(); CABEZA.stamp(CAB, HM, HM);
+  hs(15, 17, 'V');                                             // brillo de la nariz
+  const exp = st.exp;
+  ojos(exp, st.ex, st.ey, st.cerrado);
+  if (S.rubor || exp === 'enamorado') for (const [x, y] of [[2, 18], [3, 18], [4, 18], [3, 17]]) { hs(x, y, 'E'); hs(HW - 1 - x, y, 'E'); }
+  boca(st.boca, exp);
+  if (S.cara === 'gafas') {
+    for (const [x0, y0] of OJOS) { const x = x0 - 1, y = y0 - 2; for (let i = 1; i <= 3; i++) { hs(x + i, y, 'F'); hs(x + i, y + 4, 'F'); } for (let j = 1; j <= 3; j++) { hs(x, y + j, 'F'); hs(x + 4, y + j, 'F'); } }
+    for (let x = 12; x <= 21; x++) hs(x, 11, 'F');
+  }
+  const cab = S.cabeza;
+  if (cab === 'auriculares') accesorio(P => {
+    for (let x = 6; x <= 27; x++) { const yb = 2.2 + ((x - 16.5) / 11) ** 2 * 3.2; P.p(x, Math.round(yb), 'A'); P.p(x, Math.round(yb) + 1, x < 9 || x > 24 ? 'A' : 'a'); }
+    P.linea(5, 5, 1, 10, .6, 'A'); P.linea(28, 5, 32, 10, .6, 'A');
+    P.rect(-2, 10, 2, 16, (x, y) => y >= 15 ? 'a' : x === 2 ? 'a' : 'A'); P.rect(31, 10, 35, 16, (x, y) => y >= 15 ? 'a' : x === 31 ? 'a' : 'A');
+    P.linea(1, 17, 8, 21, .4, 'a'); P.disco(9.5, 21, 1.1, 'k'); P.p(9, 20, 'J');
+  });
+  else if (cab === 'gorro') accesorio(P => {
+    P.elipse(16.5, 7.5, 9.5, 6.5, (x, y) => y >= 6 ? ((x & 1) ? 'a' : 'A') : (y < 3 ? 'X' : 'A'));
+    for (let x = 7; x <= 26; x++) for (let y = 8; y <= 14; y++) ACC.set(x + HM, y + HM, '');
+    P.rect(7, 6, 26, 7, x => (x & 1) ? 'a' : 'A');
+    P.disco(16.5, -0.5, 1.9, (x, y) => y < 0 ? 'T' : 'q');
+  });
+  else if (cab === 'gorra') accesorio(P => {
+    P.elipse(16.5, 7, 9.5, 5.5, (x, y) => y > 7 ? '' : y <= 2 ? 'X' : 'A');
+    P.elipse(16.5, 8, 12, 1.5, 'a');
+    P.p(16, 1, 'a'); P.p(17, 1, 'a');
+  });
+  else if (cab === 'lazo') accesorio(P => {
+    P.stamp(['AA...AA', 'XAA.AAa', 'XAAAAAa', 'XAA.AAa', 'AA...AA'], 22, 0); P.p(25, 2, 'a');
+  });
+  if (st.lado) {   // mirar a un lado: la cabeza se ve 1 celda girada (la raya del medio se corre)
+    for (let y = 6; y <= 13; y++) { const xs = st.lado > 0 ? 17 : 16; if (hg(xs, y) === 'g') { hs(xs, y, 'G'); hs(st.lado > 0 ? 15 : 18, y, hg(st.lado > 0 ? 15 : 18, y) === 'G' ? 'g' : hg(st.lado > 0 ? 15 : 18, y)); } }
+  }
+}
+
+/* ---------------------------------------------------------------------
+   PIEZAS DE LA ESCENA (coordenadas de la rejilla 64×64)
+   --------------------------------------------------------------------- */
+const TECLAS = []; for (let f = 0; f < 3; f++) for (let i = 0; i < 7; i++) TECLAS.push([8 + i * 3 + (f === 1 ? 1 : 0), 49 + f * 2]);
+function pintarEscena(st) {
+  ESC.clear();
+  const b = st.resp;                          // respiración: 0 o 1 celda
+  /* la cola, detrás de todo: anillos G/M que se balancean */
+  part(P => {
+    const sw = st.cola, p0 = [43, 47], p1 = [60 + sw * .6, 45], p2 = [55 + sw * 1.6, 21 + Math.abs(sw) * .4];
+    const pts = []; for (let i = 0; i <= 60; i++) { const u = i / 60, a = (1 - u) ** 2, m = 2 * (1 - u) * u, c = u * u; pts.push([a * p0[0] + m * p1[0] + c * p2[0], a * p0[1] + m * p1[1] + c * p2[1]]); }
+    let L = 0; for (let i = 0; i < pts.length; i++) { if (i) L += Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]);
+      const u = i / 60, r = lerp(4.2, 3.1, u) + Math.sin(u * Math.PI) * .9, ciclo = L % 7, banda = u > .955 ? 'M' : (ciclo > 4.9 ? 'M' : 'G');
+      P.disco(pts[i][0], pts[i][1], r, (x, y) => banda === 'G' && x > pts[i][0] + r * .45 ? 'g' : banda); }
+  }, { corte: MESA_Y });
+  /* el cuerpo */
+  part(P => {
+    P.elipse(32, 47 + b, 14.5, 19, (x, y) => x > 41 ? 'g' : 'G');
+    P.elipse(32, 46 + b, 8, 12, (x, y) => x > 37 ? 'w' : 'W');
+  }, { corte: MESA_Y });
+  if (S.cuello === 'bufanda') part(P => {
+    P.elipse(32, 29.5 + b, 13, 2.6, x => (x >> 1) & 1 ? 'a' : 'A');
+    P.rect(21, 31 + b, 24, 39 + b, (x, y) => (y >> 1) & 1 ? 'a' : 'A');
+    for (let x = 21; x <= 24; x++) if (x & 1) P.p(x, 40 + b, 'a');
+  }, { corte: MESA_Y });
+  /* la cabeza */
+  armarCabeza(st);
+  ESC.pegar(CABEZA, 15 - HM + st.hx, 6 - HM + st.hy + b);
+  if (S.cuello === 'pajarita') part(P => P.stamp(['AA...AA', 'XAAkAAa', 'XAAkAAa', 'AA...AA'], 29, 29 + b + st.hy), { borde: true });
+  /* el escritorio */
+  if (st.mesaPixel) part(P => {
+    P.rect(1, MESA_Y, 62, 58, (x, y) => (y === MESA_Y || (hsh(x * .37 | 0, y) > .93)) ? 'y' : 'Y');
+    P.rect(1, 59, 62, 63, (x, y) => y === 59 ? 'K' : (y > 61 ? 'z' : 'Z'));
+  });
+  /* el teclado (a la izquierda; con espejo, el sprite entero se da la vuelta) */
+  part(P => {
+    P.rect(6, 48, 30, 54, 'Q');
+    TECLAS.forEach(([x, y], i) => { const on = st.teclas.has(i); P.p(x, y, on ? 'X' : 'q'); P.p(x + 1, y, on ? 'X' : 'q'); });
+    P.rect(13, 54, 23, 54, st.teclas.has(99) ? 'X' : 'q');
+  });
+  /* la alfombrilla y el ratón */
+  part(P => { P.rect(38, 48, 58, 57, (x, y) => (x === 38 || x === 58 || y === 48 || y === 57) ? 'n' : 'N'); });
+  const mx = 46 + st.rx, my = 49 + st.ry;
+  part(P => {
+    P.linea(mx + 2, my - 1, mx + 2 - st.rx * .3, 48, .2, 'k');
+    const I = st.bi ? 'X' : 'L', D = st.bd ? 'X' : 'L';
+    P.stamp(['.LLL.', 'LLLLL', 'LLLLl', 'LLLLl', I + I + 'k' + D + D, I + I + 'k' + D + 'l', '.' + I + 'l' + D + '.'], mx, my);
+  });
+  /* brazos y patas (con mando: antebrazos detrás, mando delante y las patas agarrándolo encima) */
+  const hombroI = [20, 35 + b], hombroD = [44, 35 + b], mando = st.modo === 'mando';
+  let pI, pD;
+  if (mando) { pI = [15 + st.mx0 + 6, 47 + st.my0]; pD = [15 + st.mx0 + 27, 47 + st.my0]; }
+  else if (st.modo === 'raton') { pI = st.pataTecla; pD = [mx + 2, my - 1 + (st.bi || st.bd ? 1 : 0)]; }
+  else { pI = [24, 51]; pD = [40, 51]; }
+  const brazos = [[hombroI, pI, -1], [hombroD, pD, 1]];
+  const brazo = ([h, p, s], conPata) => part(P => {   // el codo se abre hacia fuera para que no parezcan dos tubos
+    const cx = lerp(h[0], p[0], .5) + s * (mando ? 3.2 : 2.2), cy = lerp(h[1], p[1], .45);
+    const tono = (x, y) => (s > 0 && x > cx + .5) || (s < 0 && x > cx + 2.2) ? 'g' : 'G';
+    P.linea(h[0], h[1], cx, cy, 2.5, tono); P.linea(cx, cy, p[0], p[1] - 1.2, 2.3, tono);
+    if (conPata) pata(P, p);
+  });
+  const pata = (P, p) => { P.elipse(p[0], p[1], 2.9, 2.1, (x, y) => y > p[1] ? 'h' : 'H'); P.p(p[0] - 1, p[1] + 1, 'h'); P.p(p[0] + 1, p[1] + 1, 'h'); };
+  if (mando) { brazos.forEach(B => brazo(B, false)); pintarMando(st); brazos.forEach(([, p]) => part(P => pata(P, p))); }
+  else brazos.forEach(B => brazo(B, true));
+  /* chispitas del clic */
+  for (const c of st.chispas) { const u = c.u; if (u > 1) continue; const r = 1 + Math.round(u * 2); for (const [dx, dy] of [[-r, 0], [r, 0], [0, r], [-r, r]]) ESC.set(c.x + dx, c.y + dy + 2, 'T'); }
+}
+function pintarMando(st) {
+  /* mando de salón blanco (L/l), 33×15 celdas, sostenido delante del pecho */
+  const x0 = 15 + st.mx0, y0 = 36 + st.my0, pad = st.pad;
+  const btn = i => pad && pad.b[i] > .5;
+  part(P => {   // gatillos y botones de hombro, detrás
+    P.rect(x0 + 4, y0, x0 + 10, y0 + 2, (x, y) => (btn(6) && y === y0) || (btn(4) && y > y0) ? 'X' : 'l');
+    P.rect(x0 + 23, y0, x0 + 29, y0 + 2, (x, y) => (btn(7) && y === y0) || (btn(5) && y > y0) ? 'X' : 'l');
+  });
+  part(P => {
+    P.rect(x0 + 3, y0 + 3, x0 + 30, y0 + 9, 'L');
+    P.elipse(x0 + 7, y0 + 10, 4.6, 4.4, (x, y) => y > y0 + 10 ? 'l' : 'L');
+    P.elipse(x0 + 26, y0 + 10, 4.6, 4.4, (x, y) => y > y0 + 10 ? 'l' : 'L');
+    P.elipse(x0 + 16.5, y0 + 9, 10, 2.6, (x, y) => y > y0 + 10 ? 'l' : 'L');
+  });
+  const s = (x, y, c) => ESC.set(x0 + x, y0 + y, c);
+  /* cruceta */
+  for (const [x, y] of [[7, 4], [7, 5], [5, 6], [6, 6], [7, 6], [8, 6], [9, 6], [7, 7], [7, 8]]) s(x, y, 'k');
+  if (btn(12)) { s(7, 4, 'X'); s(7, 5, 'X'); } if (btn(13)) { s(7, 7, 'X'); s(7, 8, 'X'); } if (btn(14)) { s(5, 6, 'X'); s(6, 6, 'X'); } if (btn(15)) { s(8, 6, 'X'); s(9, 6, 'X'); }
+  /* A B X Y (2×2 cada uno, en rombo) */
+  for (const [i, x, y, c] of [[3, 25, 3, '1'], [1, 28, 5, '2'], [0, 25, 7, '3'], [2, 22, 5, '4']]) { const v = btn(i) ? 'T' : c; s(x, y, v); s(x + 1, y, v); s(x, y + 1, v); s(x + 1, y + 1, btn(i) ? 'T' : 'k'); }
+  /* select, start y el botón de casa */
+  s(13, 5, btn(8) ? 'X' : 'k'); s(14, 5, btn(8) ? 'X' : 'k'); s(19, 5, btn(9) ? 'X' : 'k'); s(20, 5, btn(9) ? 'X' : 'k');
+  s(16, 4, btn(16) ? 'T' : 'A'); s(17, 4, btn(16) ? 'T' : 'A');
+  /* sticks: base oscura 3×3 y el capuchón que se mueve una celda */
+  const ax = pad ? pad.a : [0, 0, 0, 0], sx = S.espejo ? -1 : 1;
+  for (const [cx, cy, a, bb] of [[12, 9, 0, 10], [21, 9, 2, 11]]) {
+    for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) s(cx + dx, cy + dy, 'k');
+    const ox = Math.round(clamp((ax[a] || 0) * sx * 1.4, -1, 1)), oy = Math.round(clamp((ax[a + 1] || 0) * 1.4, -1, 1));
+    s(cx + ox, cy + oy, btn(bb) ? 'X' : 'J');
+  }
+}
+/* ---------------------------------------------------------------------
+   DE LA REJILLA A LOS PÍXELES (con la luz de la escena aplicada a escala de celda, como pxLight)
+   --------------------------------------------------------------------- */
+const SPR = mk(SW, SH), sprg = SPR.getContext('2d'), SPRL = mk(SW, SH), sprl = SPRL.getContext('2d');
+const IMG = sprg.createImageData(SW, SH);
+function rasterizar(luz) {
+  const d = IMG.data;
+  for (let i = 0; i < ESC.a.length; i++) { const c = ESC.a[i], k = i * 4; if (!c) { d[k + 3] = 0; continue; } const p = PAL.get(c) || [255, 0, 255, 255]; d[k] = p[0]; d[k + 1] = p[1]; d[k + 2] = p[2]; d[k + 3] = p[3]; }
+  sprg.putImageData(IMG, 0, 0);
+  sprl.clearRect(0, 0, SW, SH); sprl.globalCompositeOperation = 'source-over'; sprl.globalAlpha = 1; sprl.drawImage(SPR, 0, 0);
+  if (!luz) return SPRL;
+  const lado = luz.lado;   // de dónde viene la luz (-1 izquierda, 1 derecha)
+  if (luz.mult) { sprl.globalCompositeOperation = 'multiply'; sprl.fillStyle = css(luz.mult); sprl.fillRect(0, 0, SW, SH); sprl.globalCompositeOperation = 'destination-in'; sprl.drawImage(SPR, 0, 0); }
+  const gr = sprl.createLinearGradient(lado < 0 ? 0 : SW, 0, lado < 0 ? SW : 0, 0);
+  gr.addColorStop(0, css(luz.col, luz.a)); gr.addColorStop(.55, css(luz.col, luz.a * .25)); gr.addColorStop(1, css(luz.col, 0));
+  sprl.globalCompositeOperation = 'screen'; sprl.fillStyle = gr; sprl.fillRect(0, 0, SW, SH);
+  if (luz.borde) { const g2 = sprl.createLinearGradient(lado < 0 ? SW : 0, 0, lado < 0 ? 0 : SW, 0); g2.addColorStop(0, css(luz.borde, .35)); g2.addColorStop(.3, css(luz.borde, 0)); sprl.fillStyle = g2; sprl.fillRect(0, 0, SW, SH); }
+  sprl.globalCompositeOperation = 'destination-in'; sprl.drawImage(SPR, 0, 0);
+  sprl.globalCompositeOperation = 'source-over';
+  return SPRL;
+}
+
+/* ---------------------------------------------------------------------
+   FUENTE PIXEL 5×7 de las cajas de diálogo de Almagre (con tildes, ñ, ¿ ¡)
+   --------------------------------------------------------------------- */
+const FONT5 = (() => {
+  const G = {
+    A: '.XXX.|X...X|X...X|XXXXX|X...X|X...X|X...X', B: 'XXXX.|X...X|X...X|XXXX.|X...X|X...X|XXXX.', C: '.XXX.|X...X|X....|X....|X....|X...X|.XXX.', D: 'XXXX.|X...X|X...X|X...X|X...X|X...X|XXXX.',
+    E: 'XXXXX|X....|X....|XXXX.|X....|X....|XXXXX', F: 'XXXXX|X....|X....|XXXX.|X....|X....|X....', G: '.XXX.|X...X|X....|X.XXX|X...X|X...X|.XXXX', H: 'X...X|X...X|X...X|XXXXX|X...X|X...X|X...X',
+    I: '.XXX.|..X..|..X..|..X..|..X..|..X..|.XXX.', J: '..XXX|...X.|...X.|...X.|...X.|X..X.|.XX..', K: 'X...X|X..X.|X.X..|XX...|X.X..|X..X.|X...X', L: 'X....|X....|X....|X....|X....|X....|XXXXX',
+    M: 'X...X|XX.XX|X.X.X|X.X.X|X...X|X...X|X...X', N: 'X...X|XX..X|X.X.X|X..XX|X...X|X...X|X...X', O: '.XXX.|X...X|X...X|X...X|X...X|X...X|.XXX.', P: 'XXXX.|X...X|X...X|XXXX.|X....|X....|X....',
+    Q: '.XXX.|X...X|X...X|X...X|X.X.X|X..X.|.XX.X', R: 'XXXX.|X...X|X...X|XXXX.|X.X..|X..X.|X...X', S: '.XXXX|X....|X....|.XXX.|....X|....X|XXXX.', T: 'XXXXX|..X..|..X..|..X..|..X..|..X..|..X..',
+    U: 'X...X|X...X|X...X|X...X|X...X|X...X|.XXX.', V: 'X...X|X...X|X...X|X...X|X...X|.X.X.|..X..', W: 'X...X|X...X|X...X|X.X.X|X.X.X|X.X.X|.X.X.', X: 'X...X|X...X|.X.X.|..X..|.X.X.|X...X|X...X',
+    Y: 'X...X|X...X|.X.X.|..X..|..X..|..X..|..X..', Z: 'XXXXX|....X|...X.|..X..|.X...|X....|XXXXX',
+    a: '.....|.....|.XXX.|....X|.XXXX|X...X|.XXXX', b: 'X....|X....|XXXX.|X...X|X...X|X...X|XXXX.', c: '.....|.....|.XXX.|X....|X....|X...X|.XXX.', d: '....X|....X|.XXXX|X...X|X...X|X...X|.XXXX',
+    e: '.....|.....|.XXX.|X...X|XXXXX|X....|.XXX.', f: '..XX.|.X..X|.X...|XXX..|.X...|.X...|.X...', g: '.....|.....|.XXXX|X...X|X...X|X...X|.XXXX|....X|.XXX.', h: 'X....|X....|XXXX.|X...X|X...X|X...X|X...X',
+    i: '..X..|.....|.XX..|..X..|..X..|..X..|.XXX.', j: '...X.|.....|..XX.|...X.|...X.|...X.|...X.|X..X.|.XX..', k: 'X....|X....|X..X.|X.X..|XX...|X.X..|X..X.', l: '.XX..|..X..|..X..|..X..|..X..|..X..|.XXX.',
+    m: '.....|.....|XX.X.|X.X.X|X.X.X|X.X.X|X.X.X', n: '.....|.....|XXXX.|X...X|X...X|X...X|X...X', o: '.....|.....|.XXX.|X...X|X...X|X...X|.XXX.', p: '.....|.....|XXXX.|X...X|X...X|X...X|XXXX.|X....|X....',
+    q: '.....|.....|.XXXX|X...X|X...X|X...X|.XXXX|....X|....X', r: '.....|.....|X.XX.|XX..X|X....|X....|X....', s: '.....|.....|.XXXX|X....|.XXX.|....X|XXXX.', t: '.X...|.X...|XXXX.|.X...|.X...|.X..X|..XX.',
+    u: '.....|.....|X...X|X...X|X...X|X..XX|.XX.X', v: '.....|.....|X...X|X...X|X...X|.X.X.|..X..', w: '.....|.....|X...X|X...X|X.X.X|X.X.X|.X.X.', x: '.....|.....|X...X|.X.X.|..X..|.X.X.|X...X',
+    y: '.....|.....|X...X|X...X|X...X|X...X|.XXXX|....X|.XXX.', z: '.....|.....|XXXXX|...X.|..X..|.X...|XXXXX',
+    0: '.XXX.|X...X|X..XX|X.X.X|XX..X|X...X|.XXX.', 1: '..X..|.XX..|..X..|..X..|..X..|..X..|.XXX.', 2: '.XXX.|X...X|....X|...X.|..X..|.X...|XXXXX', 3: 'XXXX.|....X|....X|.XXX.|....X|....X|XXXX.',
+    4: '...X.|..XX.|.X.X.|X..X.|XXXXX|...X.|...X.', 5: 'XXXXX|X....|XXXX.|....X|....X|X...X|.XXX.', 6: '.XXX.|X....|X....|XXXX.|X...X|X...X|.XXX.', 7: 'XXXXX|....X|...X.|..X..|.X...|.X...|.X...',
+    8: '.XXX.|X...X|X...X|.XXX.|X...X|X...X|.XXX.', 9: '.XXX.|X...X|X...X|.XXXX|....X|....X|.XXX.',
+    '!': '..X..|..X..|..X..|..X..|..X..|.....|..X..', '¡': '..X..|.....|..X..|..X..|..X..|..X..|..X..', '?': '.XXX.|X...X|....X|...X.|..X..|.....|..X..', '¿': '..X..|.....|..X..|.X...|X....|X...X|.XXX.',
+    '.': '.....|.....|.....|.....|.....|.....|..X..', ',': '.....|.....|.....|.....|.....|.....|..X..|.X...', ':': '.....|..X..|.....|.....|.....|..X..|.....', ';': '.....|..X..|.....|.....|.....|..X..|.X...',
+    '-': '.....|.....|.....|.XXX.|.....|.....|.....', "'": '..X..|..X..|.....|.....|.....|.....|.....', '"': '.X.X.|.X.X.|.....|.....|.....|.....|.....', '(': '...X.|..X..|.X...|.X...|.X...|..X..|...X.',
+    ')': '.X...|..X..|...X.|...X.|...X.|..X..|.X...', '/': '....X|...X.|...X.|..X..|.X...|.X...|X....', '*': '.....|X.X.X|.XXX.|XXXXX|.XXX.|X.X.X|.....', '·': '.....|.....|.....|..X..|.....|.....|.....',
+    '%': 'XX..X|XX.X.|...X.|..X..|.X...|.X.XX|X..XX', '+': '.....|..X..|..X..|XXXXX|..X..|..X..|.....', '♥': '.....|.X.X.|XXXXX|XXXXX|.XXX.|..X..|.....', '▶': 'X....|XX...|XXX..|XXXX.|XXX..|XX...|X....', '~': '.....|.....|.XX.X|X.XX.|.....|.....|.....', ' ': '.....',
+  };
+  const AC = { '´': ['...X.', '..X..'], '~': ['.XX.X', 'X.XX.'], '¨': ['.X.X.', '.....'] };
+  const comp = { 'á': ['a', '´'], 'é': ['e', '´'], 'í': ['i', '´'], 'ó': ['o', '´'], 'ú': ['u', '´'], 'ñ': ['n', '~'], 'ü': ['u', '¨'], 'Á': ['A', '´'], 'É': ['E', '´'], 'Í': ['I', '´'], 'Ó': ['O', '´'], 'Ú': ['U', '´'], 'Ñ': ['N', '~'] };
+  const out = {};
+  const rows = s => { const r = s.split('|'); while (r.length < 9) r.push('.....'); return ['.....', '.....'].concat(r); };   // 11 filas: 2 para tildes
+  for (const k in G) out[k] = rows(G[k]);
+  for (const k in comp) { const [b, a] = comp[k], r = out[b].slice(), lower = b === b.toLowerCase(); const at = lower ? 2 : 0; r[at] = AC[a][0]; r[at + 1] = AC[a][1]; out[k] = r; }
+  /* atlas blanco: 6 px de avance, 11 de alto */
+  const keys = Object.keys(out), c = mk(keys.length * 6, 11), g = c.getContext('2d'), idx = {}; g.fillStyle = '#fff';
+  keys.forEach((k, n) => { idx[k] = n; out[k].forEach((row, y) => { for (let x = 0; x < 5; x++) if (row[x] === 'X') g.fillRect(n * 6 + x, y, 1, 1); }); });
+  return { c, idx };
+})();
+function pxText(g, s, x, y, p, col) {
+  const F = FONT5; F.tint = F.tint || {}; let tc = F.tint[col];
+  if (!tc) { tc = mk(F.c.width, F.c.height); const tg = tc.getContext('2d'); tg.drawImage(F.c, 0, 0); tg.globalCompositeOperation = 'source-in'; tg.fillStyle = col; tg.fillRect(0, 0, tc.width, tc.height); F.tint[col] = tc; }
+  g.save(); g.imageSmoothingEnabled = false;
+  for (let i = 0; i < s.length; i++) { if (s[i] === ' ') continue; const n = F.idx[s[i]] ?? F.idx[s[i].toLowerCase()] ?? F.idx['?']; g.drawImage(tc, n * 6, 0, 5, 11, Math.round(x + i * 6 * p), Math.round(y), 5 * p, 11 * p); }
+  g.restore();
+}
+function cajaPixel(g, x, y, w, h, p) { g.fillStyle = '#000'; g.fillRect(x, y, w, h); g.fillStyle = '#fff'; const b = p * 2; g.fillRect(x, y, w, b); g.fillRect(x, y + h - b, w, b); g.fillRect(x, y, b, h); g.fillRect(x + w - b, y, b, h); }
+function envolver(s, n) { const w = s.split(' '), L = []; let cur = ''; for (const x of w) { if ((cur + ' ' + x).trim().length > n) { if (cur.trim()) L.push(cur.trim()); cur = x; } else cur += ' ' + x; } if (cur.trim()) L.push(cur.trim()); return L; }
+
+/* ---------------------------------------------------------------------
+   EL CUARTO DE ALMAGRE: acuarela pintada una vez (papel reservado, veladuras, borde húmedo, grano)
+   --------------------------------------------------------------------- */
+const HORAS = {
+  tarde: { pared: [226, 196, 158], pared2: [196, 150, 120], cielo: [[252, 206, 136], [240, 150, 112], [176, 112, 146]], luz: [255, 196, 120], luzA: .2, motas: [255, 220, 160], ciudad: [150, 96, 112] },
+  dia:   { pared: [232, 222, 202], pared2: [204, 192, 170], cielo: [[156, 204, 236], [196, 226, 240], [232, 240, 236]], luz: [255, 246, 220], luzA: .14, motas: [255, 250, 230], ciudad: [150, 170, 186] },
+  noche: { pared: [78, 82, 122], pared2: [52, 54, 90], cielo: [[16, 20, 52], [36, 36, 84], [70, 52, 104]], luz: [150, 170, 255], luzA: .06, motas: [200, 210, 255], ciudad: [30, 30, 58] },
+};
+let GRANO = null, MANCHA = null;
+function texturas() {
+  if (GRANO) return;
+  GRANO = mk(256, 256); { const g = GRANO.getContext('2d'), id = g.createImageData(256, 256), d = id.data; for (let i = 0; i < d.length; i += 4) { const v = 200 + Math.random() * 55; d[i] = d[i + 1] = d[i + 2] = v; d[i + 3] = 255; } g.putImageData(id, 0, 0); }
+  MANCHA = mk(160, 90); { const g = MANCHA.getContext('2d'), id = g.createImageData(160, 90), d = id.data; for (let j = 0; j < 90; j++) for (let i = 0; i < 160; i++) { const v = clamp(.5 + FBM(i * .045, j * .045, 4) * 1.3), k = (j * 160 + i) * 4; d[k] = d[k + 1] = d[k + 2] = 255 - v * 90; d[k + 3] = 255; } g.putImageData(id, 0, 0); }
+}
+function wob(pts, amt, s0, paso = 7) {
+  const o = []; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length], d = Math.hypot(b[0] - a[0], b[1] - a[1]), k = Math.max(1, Math.ceil(d / paso)); for (let j = 0; j < k; j++) o.push([lerp(a[0], b[0], j / k), lerp(a[1], b[1], j / k)]); }
+  return o.map(p => [p[0] + N2(p[0] * .03 + s0, p[1] * .03) * amt, p[1] + N2(p[1] * .03 + 7 + s0, p[0] * .03) * amt]);
+}
+const camino = pts => { const P = new Path2D(); pts.forEach((p, i) => i ? P.lineTo(p[0], p[1]) : P.moveTo(p[0], p[1])); P.closePath(); return P; };
+const rectP = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h]];
+function lavado(g, pts, col, a, o = {}) {
+  const s = o.s ?? hsh(pts[0][0], pts[0][1]) * 50, amt = o.amt ?? 3, P = camino(wob(pts, amt, s));
+  let y0 = 1e9, y1 = -1e9; for (const p of pts) { y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]); }
+  g.save();
+  if (o.reserva !== false) { g.fillStyle = 'rgb(241,233,214)'; g.fill(P); }
+  g.globalCompositeOperation = 'multiply';
+  const gr = g.createLinearGradient(0, y0, 0, y1); gr.addColorStop(0, css(shc(col, o.arriba ?? .1))); gr.addColorStop(1, css(shc(col, -(o.abajo ?? .14))));
+  g.globalAlpha = a; g.fillStyle = gr; g.fill(P);
+  g.globalAlpha = a * .4; g.fillStyle = css(col); g.fill(camino(wob(pts.map(p => [p[0] + amt * .9, p[1] + amt * .5]), amt * 1.3, s + 4)));
+  g.globalAlpha = .32 * Math.min(1, a * 1.4); g.strokeStyle = css(shc(col, -.4)); g.lineWidth = o.borde ?? 1.4; g.stroke(P);
+  g.restore();
+}
+function plumilla(g, pts, w, a, s, perdida = .18, col = [30, 24, 28]) {
+  g.save(); g.lineCap = 'round'; g.lineJoin = 'round'; g.strokeStyle = css(col, a); g.lineWidth = w; g.beginPath();
+  let pen = false; const n = Math.max(2, Math.ceil(Math.hypot(pts[1][0] - pts[0][0], pts[1][1] - pts[0][1]) / 5));
+  for (let i = 0; i <= n; i++) { const x = lerp(pts[0][0], pts[1][0], i / n) + N2(i * .3, s) * .8, y = lerp(pts[0][1], pts[1][1], i / n) + N2(i * .3 + 5, s) * .8, on = N2(i * .17, s + 3) * .5 + .5 > perdida;
+    if (on) { if (pen) g.lineTo(x, y); else { g.moveTo(x, y); pen = true; } } else pen = false; }
+  g.stroke(); g.restore();
+}
+const marco = (g, x, y, w, h, wd, a, s) => { plumilla(g, [[x, y], [x + w, y]], wd, a, s); plumilla(g, [[x + w, y], [x + w, y + h]], wd, a, s + 1); plumilla(g, [[x + w, y + h], [x, y + h]], wd, a, s + 2); plumilla(g, [[x, y + h], [x, y]], wd, a, s + 3); };
+/* Ramiro Lagos (el pato de A.G.U.A.) para el cartel de la pared: la ficha original del elenco */
+const RAMIRO = { pal: { K: [30, 24, 28], G: [44, 118, 76], g: [30, 82, 56], T: [255, 255, 255], Y: [236, 196, 60], W: [244, 244, 240], B: [130, 72, 52], S: [184, 184, 178], s: [112, 112, 118], C: [196, 164, 112], c: [148, 116, 74], F: [74, 64, 60], f: [28, 24, 28] },
+  base: ['..........KKKKKK....', '.........KFFFFFFK...', '.........KffffffK...', '......KKFFFFFFFFFFKK', '.......KKKKKKKKKKKK.', '..........KGGGgK....', '.........KGGTKGgK...', '.........KGGGGGgKYYK', '.........KgGGGGgKYYY', '..........KWWWWKKKKK', '.....KK...KCCCCCK...', '....KccK.KCCCCCCCK..', '...KcccCKCCCCCCCCCK.', '...KccCCCCCCfCYCCCK.', '....KCCCCCCCCCCCCK..', '.....KKCCCCCCCCKK...', '.......KKKKKKKKK....'] };
+function pintarFondo(W, H, yMesa, lado, hora) {
+  texturas();
+  const c = mk(W, H), g = c.getContext('2d'), P = HORAS[hora] || HORAS.tarde, u = H / 1080;
+  /* pared */
+  g.fillStyle = css(shc(P.pared, .1)); g.fillRect(0, 0, W, H);
+  g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = .55; g.imageSmoothingEnabled = true; g.drawImage(MANCHA, 0, 0, W, H); g.restore();
+  lavado(g, rectP(-20, -20, W + 40, yMesa + 30), P.pared, .45, { amt: 8, reserva: false, arriba: .05, abajo: .25 });
+  /* la ventana, en el lado contrario al mapache */
+  const ww = W * .27, wh = H * .44, wx = lado > 0 ? W * .07 : W - W * .07 - ww, wy = H * .1;
+  g.save(); g.beginPath(); g.rect(wx, wy, ww, wh); g.clip();
+  const cg = g.createLinearGradient(0, wy, 0, wy + wh); P.cielo.forEach((cc, i) => cg.addColorStop(i / (P.cielo.length - 1), css(cc))); g.fillStyle = cg; g.fillRect(wx, wy, ww, wh);
+  if (hora === 'noche') {
+    for (let i = 0; i < 60; i++) { g.fillStyle = `rgba(255,255,240,${.3 + hsh(i, 3) * .6})`; const s = (1 + hsh(i, 4) * 1.6) * u; g.fillRect(wx + hsh(i, 1) * ww, wy + hsh(i, 2) * wh * .7, s, s); }
+    const lx = wx + ww * .7, ly = wy + wh * .22, lr = wh * .07; const mg = g.createRadialGradient(lx, ly, lr * .5, lx, ly, lr * 4); mg.addColorStop(0, 'rgba(255,250,220,.35)'); mg.addColorStop(1, 'rgba(255,250,220,0)'); g.fillStyle = mg; g.fillRect(lx - lr * 4, ly - lr * 4, lr * 8, lr * 8);
+    g.fillStyle = '#fbf6e2'; g.beginPath(); g.arc(lx, ly, lr, 0, TAU); g.fill(); g.fillStyle = 'rgba(200,196,170,.5)'; g.beginPath(); g.arc(lx + lr * .3, ly - lr * .2, lr * .25, 0, TAU); g.fill();
+  } else {
+    for (let i = 0; i < 4; i++) { const cx = wx + ww * (.15 + hsh(i, 7) * .8), cy = wy + wh * (.12 + hsh(i, 8) * .3), rw = ww * (.16 + hsh(i, 9) * .14); lavado(g, Array.from({ length: 14 }, (_, k) => [cx + Math.cos(k / 14 * TAU) * rw, cy + Math.sin(k / 14 * TAU) * rw * .32]), hora === 'tarde' ? [255, 226, 200] : [255, 255, 255], .5, { amt: 5, reserva: false, mode: 'source-over' }); }
+  }
+  /* los tejados de la calle Almagre al fondo */
+  const yb = wy + wh * .62; g.fillStyle = css(P.ciudad); g.beginPath(); g.moveTo(wx, wy + wh);
+  let x = wx; let i = 0; while (x < wx + ww) { const bw = ww * (.1 + hsh(i, 11) * .12), bh = wh * (.12 + hsh(i, 12) * .22); g.lineTo(x, yb + wh * .3 - bh); g.lineTo(x + bw, yb + wh * .3 - bh); x += bw; i++; } g.lineTo(wx + ww, wy + wh); g.fill();
+  if (hora === 'noche') for (let k = 0; k < 40; k++) { g.fillStyle = `rgba(255,${200 + hsh(k, 5) * 40 | 0},120,${.5 + hsh(k, 6) * .4})`; g.fillRect(wx + hsh(k, 13) * ww, yb + wh * .02 + hsh(k, 14) * wh * .3, 3 * u, 4 * u); }
+  else { g.fillStyle = css(shc(P.ciudad, .35), .5); for (let k = 0; k < 30; k++) g.fillRect(wx + hsh(k, 13) * ww, yb + wh * .02 + hsh(k, 14) * wh * .3, 3 * u, 4 * u); }
+  /* persiana a medio subir */
+  for (let k = 0; k < 9; k++) { const y = wy + k * wh * .045; g.fillStyle = css(shc(P.pared, -.05), .92); g.fillRect(wx, y, ww, wh * .03); g.fillStyle = 'rgba(30,24,28,.18)'; g.fillRect(wx, y + wh * .03, ww, 1.5 * u); }
+  g.restore();
+  /* marco y travesaños */
+  g.save(); g.globalAlpha = 1; g.fillStyle = css(shc(P.pared2, -.25), .9); g.fillRect(wx - 10 * u, wy + wh, ww + 20 * u, 12 * u); g.restore();
+  marco(g, wx, wy, ww, wh, 3 * u, .8, 3); plumilla(g, [[wx + ww / 2, wy + wh * .4], [wx + ww / 2, wy + wh]], 2.5 * u, .7, 9); plumilla(g, [[wx, wy + wh * .7], [wx + ww, wy + wh * .7]], 2.5 * u, .7, 10);
+  /* la luz de la ventana sobre la pared y la mesa: franjas de la persiana */
+  if (hora !== 'noche') { g.save(); g.globalCompositeOperation = 'screen';
+    for (let k = 0; k < 6; k++) { const sy = wy + wh * .45 + k * wh * .085, dx = -lado * W * .42, dy = H * .3, sh = wh * .045;
+      const gr = g.createLinearGradient(wx, sy, wx + dx, sy + dy); gr.addColorStop(0, css(P.luz, P.luzA * 1.4)); gr.addColorStop(1, css(P.luz, 0)); g.fillStyle = gr;
+      g.beginPath(); g.moveTo(wx + (lado > 0 ? ww : 0), sy); g.lineTo(wx + (lado > 0 ? ww : 0) + dx, sy + dy); g.lineTo(wx + (lado > 0 ? ww : 0) + dx, sy + dy + sh * 2.2); g.lineTo(wx + (lado > 0 ? ww : 0), sy + sh); g.closePath(); g.fill(); }
+    g.restore(); }
+  /* estantería con libros y una planta, en el otro lado */
+  const ex = lado > 0 ? W * .72 : W * .05, ew = W * .23, ey = H * .22;
+  for (const [k, yy] of [[0, ey], [1, ey + H * .17]]) {
+    let bx = ex + ew * .05; let j = 0; while (bx < ex + ew * (k ? .6 : .92)) { const bw = ew * (.04 + hsh(j, k + 20) * .035), bh = H * (.08 + hsh(j, k + 30) * .045), col = [[168, 69, 47], [64, 98, 120], [214, 168, 72], [90, 120, 80], [120, 80, 110], [230, 220, 200]][(j + k * 2) % 6];
+      lavado(g, rectP(bx, yy - bh, bw, bh), col, .75, { amt: 1.2 }); bx += bw + 2 * u; j++; }
+    lavado(g, rectP(ex - 8 * u, yy, ew + 16 * u, 12 * u), [140, 96, 64], .9, { amt: 1.5 });
+    plumilla(g, [[ex - 8 * u, yy + 12 * u], [ex + ew + 8 * u, yy + 12 * u]], 2 * u, .6, 20 + k);
+  }
+  { const px = ex + ew * .78, py = ey + H * .17; lavado(g, rectP(px - ew * .07, py - H * .07, ew * .14, H * .07), [190, 104, 70], .9, { amt: 1.5 });
+    for (let k = 0; k < 9; k++) { const a = -Math.PI / 2 + (k - 4) * .32, r = H * (.07 + hsh(k, 40) * .05), lx = px + Math.cos(a) * r, ly = py - H * .07 + Math.sin(a) * r;
+      lavado(g, [[px, py - H * .07], [lx - 9 * u, ly], [lx, ly - 7 * u], [lx + 9 * u, ly]], k % 2 ? [92, 140, 84] : [70, 116, 70], .85, { amt: 2, reserva: false }); } }
+  /* el cartel de «Licencia para graznar» con Ramiro en pixel */
+  { const cw = W * .1, ch = cw * 1.38, cx = lado > 0 ? W * .48 : W * .42, cy = H * .14;
+    lavado(g, rectP(cx, cy, cw, ch), [236, 222, 190], .95, { amt: 1.5 });
+    const R = RAMIRO, pp = Math.max(1, Math.floor(cw * .8 / R.base[0].length)), ox = cx + (cw - R.base[0].length * pp) / 2, oy = cy + ch * .14;
+    R.base.forEach((row, j) => row.split('').forEach((ch2, i2) => { if (ch2 === '.') return; g.fillStyle = css(R.pal[ch2]); g.fillRect(Math.round(ox + i2 * pp), Math.round(oy + j * pp), pp, pp); }));
+    const tp = Math.max(1, Math.floor(cw / 70)); pxText(g, 'LICENCIA PARA', cx + (cw - 13 * 6 * tp) / 2, cy + ch * .72, tp, '#a8452f'); pxText(g, 'GRAZNAR', cx + (cw - 7 * 6 * tp) / 2, cy + ch * .72 + 12 * tp, tp, '#1e181c');
+    marco(g, cx, cy, cw, ch, 2 * u, .75, 30); }
+  /* neón de «EN VIVO» (de noche) */
+  if (hora === 'noche') { const tp = Math.max(2, Math.round(H / 200)), tx = wx + ww / 2 - 7 * 6 * tp / 2, ty = Math.min(wy + wh + H * .07, yMesa - 14 * tp);
+    g.save(); g.shadowColor = 'rgba(255,90,170,.9)'; g.shadowBlur = 24 * u; pxText(g, 'EN VIVO', tx, ty, tp, '#ff8ccc'); g.restore(); pxText(g, 'EN VIVO', tx, ty, tp, '#ffe2f2'); }
+  /* la mesa */
+  const M = MESAS[S.mesa] || MESAS.madera;
+  g.save(); const sg = g.createLinearGradient(0, yMesa - H * .05, 0, yMesa); sg.addColorStop(0, 'rgba(30,24,28,0)'); sg.addColorStop(1, 'rgba(30,24,28,.22)'); g.fillStyle = sg; g.fillRect(0, yMesa - H * .05, W, H * .05); g.restore();
+  lavado(g, rectP(-20, yMesa, W + 40, H - yMesa + 20), M.Y, .95, { amt: 2, arriba: .08, abajo: .2 });
+  g.save(); g.globalAlpha = .18; for (let k = 0; k < 14; k++) plumilla(g, [[-10, yMesa + (H - yMesa) * hsh(k, 50)], [W + 10, yMesa + (H - yMesa) * hsh(k, 50) + (hsh(k, 51) - .5) * 20 * u]], 1.4 * u, .5, 60 + k, .45, M.z); g.restore();
+  plumilla(g, [[-10, yMesa], [W + 10, yMesa]], 2.5 * u, .7, 70, .1);
+  if (hora === 'noche') { g.save(); g.globalCompositeOperation = 'multiply'; const ng = g.createLinearGradient(0, yMesa, 0, H); ng.addColorStop(0, 'rgb(150,150,206)'); ng.addColorStop(1, 'rgb(96,96,150)'); g.fillStyle = ng; g.fillRect(0, yMesa - 2, W, H - yMesa + 2); g.restore(); }
+  /* grano de papel en todo y viñeta */
+  g.save(); g.globalCompositeOperation = 'multiply'; g.globalAlpha = .3; g.fillStyle = g.createPattern(GRANO, 'repeat'); g.fillRect(0, 0, W, H); g.restore();
+  g.save(); const vg = g.createRadialGradient(W / 2, H * .55, Math.min(W, H) * .35, W / 2, H * .55, Math.max(W, H) * .78); vg.addColorStop(0, 'rgba(30,24,28,0)'); vg.addColorStop(1, `rgba(30,24,28,${hora === 'noche' ? .5 : .3})`); g.fillStyle = vg; g.fillRect(0, 0, W, H); g.restore();
+  return { c, wx, wy, ww, wh, lado };
+}
+/* lo que se mueve en el cuarto: motas en la luz, guirnalda de bombillas y el parpadeo del neón */
+function animarFondo(g, t, F, W, H, hora) {
+  const P = HORAS[hora] || HORAS.tarde, u = H / 1080;
+  g.save(); g.globalCompositeOperation = 'screen';
+  for (let i = 0; i < 46; i++) { const sx = hsh(i, 1), sy = hsh(i, 2), sp = .01 + hsh(i, 3) * .02;
+    const x = F.wx + (F.lado > 0 ? F.ww : 0) + (-F.lado) * ((sx * W * .45 + Math.sin(t * .3 + i) * 20 * u)), y = F.wy + F.wh * .3 + ((sy + t * sp) % 1) * H * .5 + Math.sin(t * .7 + i * 2) * 8 * u;
+    const a = (hora === 'noche' ? .25 : .55) * (.4 + .6 * Math.sin(t * 1.3 + i * 3) ** 2), r = (1 + hsh(i, 4) * 1.8) * u;
+    g.fillStyle = css(P.motas, a); g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); }
+  if (hora === 'noche') {
+    const n = 18; for (let i = 0; i <= n; i++) { const x = W * i / n, y = H * .045 + Math.sin(i / n * Math.PI) * H * .05, on = .55 + .45 * Math.sin(t * 2 + i * 1.7);
+      const gr = g.createRadialGradient(x, y, 0, x, y, 18 * u); gr.addColorStop(0, `rgba(255,214,140,${.55 * on})`); gr.addColorStop(1, 'rgba(255,214,140,0)'); g.fillStyle = gr; g.fillRect(x - 18 * u, y - 18 * u, 36 * u, 36 * u);
+      g.fillStyle = `rgba(255,236,190,${.7 + .3 * on})`; g.fillRect(x - 2 * u, y - 2 * u, 4 * u, 5 * u); }
+  }
+  g.restore();
+  if (hora === 'noche') { g.save(); g.strokeStyle = 'rgba(30,24,28,.6)'; g.lineWidth = 1.5 * u; g.beginPath(); for (let i = 0; i <= 40; i++) { const x = W * i / 40, y = H * .045 + Math.sin(i / 40 * Math.PI) * H * .05; i ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); g.restore(); }
+}
+
+/* ---------------------------------------------------------------------
+   ENTRADAS: micrófono, ratón, teclado, mando y el ayudante (ayudante.py)
+   --------------------------------------------------------------------- */
+const MIC = { ctx: null, an: null, buf: null, stream: null, db: -100, lvl: -100, ultimoAlto: -9, estado: 'apagado' };
+async function iniciarMic() {
+  try {
+    if (MIC.stream) MIC.stream.getTracks().forEach(t => t.stop());
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Este navegador no deja usar el micrófono aquí');
+    const audio = { echoCancellation: false, autoGainControl: false, noiseSuppression: true }; if (S.micId) audio.deviceId = { exact: S.micId };
+    let st; try { st = await navigator.mediaDevices.getUserMedia({ audio }); } catch (e) { if (S.micId) { S.micId = ''; delete audio.deviceId; st = await navigator.mediaDevices.getUserMedia({ audio }); } else throw e; }
+    MIC.stream = st;
+    MIC.ctx = MIC.ctx || new (window.AudioContext || window.webkitAudioContext)();
+    const src = MIC.ctx.createMediaStreamSource(st); MIC.an = MIC.ctx.createAnalyser(); MIC.an.fftSize = 1024; src.connect(MIC.an); MIC.buf = new Float32Array(MIC.an.fftSize);
+    MIC.estado = 'ok'; const tr = st.getAudioTracks()[0]; $('#micEstado').textContent = 'Escuchando: ' + (tr && tr.label || 'micrófono');
+    await listarMics();
+    if (MIC.ctx.state !== 'running') { try { await MIC.ctx.resume(); } catch (e) { } }
+    if (MIC.ctx.state !== 'running') $('#aviso').classList.add('ver');
+  } catch (e) {
+    MIC.estado = 'error'; $('#micEstado').textContent = 'No se pudo abrir el micrófono: ' + (e && e.message || e) + '. Revisa el permiso del navegador (o el arranque de OBS, ver README).';
+  }
+}
+async function listarMics() {
+  try { const ds = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput'), sel = $('#selMic');
+    sel.innerHTML = '<option value="">Predeterminado</option>' + ds.map((d, i) => `<option value="${d.deviceId}">${(d.label || 'Micrófono ' + (i + 1)).replace(/</g, '&lt;')}</option>`).join('');
+    sel.value = ds.some(d => d.deviceId === S.micId) ? S.micId : ''; } catch (e) { }
+}
+function leerMic(dt) {
+  let db = -100;
+  if (DEMO.on) { const t = ahora(); const sil = Math.sin(t * 1.3) + Math.sin(t * .47) > .2; db = sil ? -24 + Math.sin(t * 17) * 9 + Math.sin(t * 7.3) * 5 : -70; }
+  else if (MIC.an && MIC.ctx && MIC.ctx.state === 'running') { MIC.an.getFloatTimeDomainData(MIC.buf); let s = 0; for (let i = 0; i < MIC.buf.length; i++) s += MIC.buf[i] * MIC.buf[i]; db = 10 * Math.log10(s / MIC.buf.length + 1e-12); }
+  if (FORZAR.mic != null) db = FORZAR.mic;
+  MIC.db = db;
+  const sube = db > MIC.lvl, tau = sube ? .02 : .04 + S.suave * .3;
+  MIC.lvl = lerp(MIC.lvl, db, 1 - Math.exp(-dt / tau));
+  if (FORZAR.mic != null) MIC.lvl = db;
+  return MIC.lvl;
+}
+const RAT = { nx: 0, ny: 0, bi: false, bd: false, t: -99, fuente: 'ninguna' };
+const TEC = { golpes: [], t: -99 };
+const AYU = { es: null, ok: false, ultimo: -99, k: null, hs: null, pad: null, reintento: 0 };
+const PAD = { t: -99, ultimo: '', id: '', pad: null };
+addEventListener('pointermove', e => { if (AYU.ok && ahora() - AYU.ultimo < 2) return; RAT.nx = clamp(e.clientX / innerWidth * 2 - 1, -1, 1); RAT.ny = clamp(e.clientY / innerHeight * 2 - 1, -1, 1); RAT.t = ahora(); RAT.fuente = 'ventana'; mostrarEngranaje(); });
+addEventListener('pointerdown', e => { if (e.target.closest('#panel')) return; if (e.button === 0) RAT.bi = true; if (e.button === 2) RAT.bd = true; RAT.t = ahora(); chispa(e.button === 2); despertarAudio(); });
+addEventListener('pointerup', e => { if (e.button === 0) RAT.bi = false; if (e.button === 2) RAT.bd = false; });
+addEventListener('contextmenu', e => { if (!e.target.closest('#panel')) e.preventDefault(); });
+const CHISPAS = []; function chispa(der) { CHISPAS.push({ t: ahora(), der }); if (CHISPAS.length > 6) CHISPAS.shift(); }
+function golpeTecla(n = 1) { for (let i = 0; i < n; i++) TEC.golpes.push({ t: ahora(), k: Math.floor(Math.random() * (TECLAS.length + 2)) }); if (TEC.golpes.length > 8) TEC.golpes.splice(0, TEC.golpes.length - 8); TEC.t = ahora(); }
+function conectarAyudante() {
+  if (AYU.es) { AYU.es.close(); AYU.es = null; } AYU.ok = false; clearTimeout(AYU.reintento);
+  if (!S.ayudante || typeof EventSource === 'undefined') { pintarEstadoAyudante(); return; }
+  const base = location.protocol.startsWith('http') && location.port == S.puerto ? '' : `http://127.0.0.1:${S.puerto}`;
+  let es; try { es = new EventSource(base + '/eventos'); } catch (e) { return; }
+  AYU.es = es;
+  es.onopen = () => { AYU.ok = true; pintarEstadoAyudante(); };
+  es.onmessage = ev => { let d; try { d = JSON.parse(ev.data); } catch (e) { return; } recibirAyudante(d); };
+  es.onerror = () => { es.close(); if (AYU.es === es) AYU.es = null; AYU.ok = false; pintarEstadoAyudante(); AYU.reintento = setTimeout(conectarAyudante, 5000); };
+}
+function recibirAyudante(d) {
+  const t = ahora(); AYU.ultimo = t; AYU.ok = true;
+  if (d.m) { const nx = clamp(d.m[0] * 2 - 1, -1, 1), ny = clamp(d.m[1] * 2 - 1, -1, 1); if (Math.abs(nx - RAT.nx) + Math.abs(ny - RAT.ny) > .002 || !!(d.b & 1) !== RAT.bi || !!(d.b & 2) !== RAT.bd) RAT.t = t; if (!RAT.bi && (d.b & 1)) chispa(false); if (!RAT.bd && (d.b & 2)) chispa(true); RAT.nx = nx; RAT.ny = ny; RAT.bi = !!(d.b & 1); RAT.bd = !!(d.b & 2); RAT.fuente = 'ayudante'; }
+  if (d.k != null) { if (AYU.k != null && d.k > AYU.k) golpeTecla(Math.min(3, d.k - AYU.k)); AYU.k = d.k; }
+  if (d.hs != null) { if (AYU.hs != null && d.hs !== AYU.hs && d.h != null) atajo(String(d.h)); AYU.hs = d.hs; }
+  AYU.pad = d.p || null;
+}
+function pintarEstadoAyudante() { const pt = $('#ptAyud'), tx = $('#txtAyud'); if (!pt) return;
+  pt.className = 'punto' + (AYU.ok ? ' ok' : S.ayudante ? ' mal' : '');
+  tx.textContent = AYU.ok ? `Ayudante: conectado (puerto ${S.puerto}). El mapache ve todo el escritorio.` : S.ayudante ? `Ayudante: no encontrado en el puerto ${S.puerto}. Reintento cada 5 s.` : 'Ayudante: apagado.'; }
+function leerMando() {
+  let pad = null;
+  try { for (const g of (navigator.getGamepads ? navigator.getGamepads() : [])) { if (g && g.connected) { pad = { id: g.id, b: g.buttons.map(b => b.value || (b.pressed ? 1 : 0)), a: Array.from(g.axes) }; break; } } } catch (e) { }
+  if (!pad && AYU.pad && ahora() - AYU.ultimo < 2) pad = AYU.pad;
+  if (FORZAR.pad) pad = FORZAR.pad;
+  if (DEMO.on && !pad) { const t = ahora(); pad = { id: 'demo', b: Array.from({ length: 17 }, (_, i) => (Math.floor(t * 2.2) % 9 === i % 9 && Math.floor(t / 7) % 2) ? 1 : 0), a: [Math.sin(t * 1.4), Math.cos(t * 1.1) * .6, Math.sin(t * .8), 0] }; }
+  if (pad) {
+    const firma = pad.b.map(v => v > .5 ? 1 : 0).join('') + pad.a.map(v => Math.abs(v) > .35 ? Math.sign(v) : 0).join('');
+    if (firma !== PAD.ultimo) { if (PAD.ultimo && /1/.test(firma) || pad.a.some(v => Math.abs(v) > .35)) PAD.t = ahora(); PAD.ultimo = firma; }
+    if (pad.b.some(v => v > .5) || pad.a.some(v => Math.abs(v) > .35)) PAD.t = Math.max(PAD.t, ahora());
+    PAD.id = pad.id;
+  }
+  PAD.pad = pad;
+  return pad;
+}
+addEventListener('gamepadconnected', e => { PAD.id = e.gamepad.id; PAD.t = ahora(); });
+
+/* ---------------------------------------------------------------------
+   ESTADO DEL MAPACHE
+   --------------------------------------------------------------------- */
+const EXPS = [['normal', 'Normal', '1'], ['feliz', 'Feliz', '2'], ['sorpresa', 'Sorpresa', '3'], ['triste', 'Triste', '4'], ['enfadado', 'Enfadado', '5'], ['enamorado', 'Enamorado', '6'], ['guino', 'Guiño', '7'], ['dormido', 'Dormido', '8']];
+const ANIMO = { exp: 'normal', desde: 0, ultimaVoz: ahora(), boca: 0, bocaHasta: 0, rebote: 0 };
+function ponerExp(e) { ANIMO.exp = e; ANIMO.desde = ahora(); document.querySelectorAll('#botExp button').forEach(b => b.classList.toggle('on', b.dataset.e === e)); }
+const FORZAR = {}; const DEMO = { on: Q.get('demo') === '1' };
+/* bocadillo */
+const BOC = { txt: '', t0: -99, idx: -1 };
+function frases() { return String(S.frases || '').split('\n').map(s => s.trim()).filter(Boolean); }
+function decir(txt) { BOC.txt = txt; BOC.t0 = ahora(); BOC.ultimoBleep = -1; }
+function atajo(k) {
+  if (k >= '1' && k <= '8') ponerExp(EXPS[+k - 1][0]);
+  else if (k === '0') ponerExp('normal');
+  else if (k === '9') { const f = frases(); if (f.length) { BOC.idx = (BOC.idx + 1) % f.length; decir(f[BOC.idx]); } }
+}
+function estadoCuadro(t, dt) {
+  const lvl = leerMic(dt), pad = leerMando();
+  let nivel = 0;
+  if (!S.silencio) { if (lvl > S.umbral + S.abierta) nivel = 2; else if (lvl > S.umbral) nivel = 1; }
+  if (nivel) { ANIMO.ultimaVoz = t; if (nivel >= ANIMO.boca || t > ANIMO.bocaHasta) { ANIMO.boca = nivel; ANIMO.bocaHasta = t + .07 + S.suave * .08; } }
+  else if (t > ANIMO.bocaHasta) ANIMO.boca = 0;
+  if (FORZAR.boca != null) ANIMO.boca = FORZAR.boca;
+  /* expresión: vuelve sola a normal, o se duerme si lleva mucho callado */
+  if (S.expDur > 0 && ANIMO.exp !== 'normal' && t - ANIMO.desde > S.expDur) ponerExp('normal');
+  let exp = ANIMO.exp;
+  if (S.suenoMin > 0 && exp === 'normal' && t - ANIMO.ultimaVoz > S.suenoMin * 60) exp = 'dormido';
+  if (FORZAR.exp) exp = FORZAR.exp;
+  /* qué enseña: ratón o mando */
+  let modo = S.disp === 'mando' ? 'mando' : S.disp === 'raton' ? 'raton' : S.disp === 'nada' ? 'nada' : (pad && PAD.t > RAT.t && PAD.t > TEC.t - 1 ? 'mando' : 'raton');
+  if (FORZAR.modo) modo = FORZAR.modo;
+  /* ratón (en el sprite; con espejo se invierte para que en pantalla se mueva igual que el tuyo) */
+  let nx = RAT.nx, ny = RAT.ny, bi = RAT.bi, bd = RAT.bd;
+  if (DEMO.on && RAT.fuente !== 'ayudante' && t - RAT.t > 3) { nx = Math.sin(t * .9) * .9; ny = Math.sin(t * 1.7) * .7; bi = Math.sin(t * 3.1) > .93; bd = Math.sin(t * 2.3 + 1) > .97; }
+  if (FORZAR.raton) ({ nx, ny, bi, bd } = { ...{ nx, ny, bi, bd }, ...FORZAR.raton });
+  const sx = S.espejo ? -1 : 1, nxs = nx * sx;
+  /* teclas (el ayudante cuenta pulsaciones; en la ventana, keydown) */
+  if (DEMO.on && Math.sin(t * 1.9) > .3 && hsh(Math.floor(t * 9)) > .55 && Math.floor(t * 9) !== DEMO.ultTecla) { DEMO.ultTecla = Math.floor(t * 9); golpeTecla(); }
+  const teclas = new Set(); let pataTecla = [17, 51];
+  for (const gp of TEC.golpes) { const age = t - gp.t; if (age < .16) { const k = gp.k >= TECLAS.length ? 99 : gp.k; teclas.add(k); const tk = k === 99 ? [18, 54] : TECLAS[k]; pataTecla = [tk[0] + 1, tk[1] - 1 + (age < .08 ? 1 : 0)]; } }
+  /* mirada */
+  let lx = 0, ly = 0, hx = 0, hy = 0, lado = 0;
+  if (S.mirar && modo !== 'mando') { lx = nxs > .4 ? 1 : nxs < -.4 ? -1 : 0; ly = ny > .55 ? 1 : 0; hx = nxs > .7 ? 1 : nxs < -.7 ? -1 : 0; lado = hx; }
+  if (modo === 'mando' && pad) { const ax = pad.a[0] || 0; hx = ax > .6 ? 1 : ax < -.6 ? -1 : 0; lado = hx; }
+  /* parpadeo: en cada ventana de 4,1 s cae uno a una hora al azar (función de t) */
+  let cerrado = false;
+  if (S.parpadeo) { const w = 4.1, k = Math.floor(t / w), tb = k * w + .4 + hsh(k, 9) * 3, d = t - tb; cerrado = (d > 0 && d < .11) || (hsh(k, 10) > .7 && d > .24 && d < .34); }
+  if (exp === 'dormido') cerrado = true;
+  /* respiración, cola y rebote al hablar */
+  const resp = S.respirar ? (Math.sin(t * TAU / 4.2) > .55 ? 1 : 0) : 0;
+  const cola = S.respirar ? Math.sin(t * 1.15) * 2.4 + Math.sin(t * 2.9) * .5 : 0;
+  const rb = +S.rebote; let saltito = 0;
+  if (rb && ANIMO.boca) saltito = -Math.min(rb, ANIMO.boca === 2 ? rb : 1) * (Math.sin(t * 22) > -.2 ? 1 : 0);
+  /* mando: se inclina con el stick izquierdo */
+  let mx0 = 0, my0 = 0; if (pad) { mx0 = Math.round(clamp(pad.a[0] || 0, -1, 1) * sx); my0 = (pad.b.slice(0, 4).some(v => v > .5)) ? 1 : 0; }
+  /* chispas de clic */
+  const rx = Math.round(nxs * 6), ry = Math.round(ny * 1.6);
+  const chispas = CHISPAS.map(c => ({ u: (t - c.t) / .25, x: 46 + rx + (c.der !== (sx < 0) ? 3 : 1), y: 49 + ry + 5 }));
+  return { exp, boca: ANIMO.boca, ex: lx, ey: ly, hx, hy: hy + saltito, lado, cerrado, resp, cola, modo, pad, mx0, my0, rx, ry, bi, bd, teclas, pataTecla, chispas, mesaPixel: S.fondo !== 'almagre' };
+}
+
+/* ---------------------------------------------------------------------
+   DIBUJO
+   --------------------------------------------------------------------- */
+const cv = document.getElementById('lienzo'), ctx = cv.getContext('2d');
+let W = 0, H = 0, DPR = 1, FONDO = null, FONDO_CLAVE = '';
+function medir() { DPR = Math.min(2, window.devicePixelRatio || 1); W = Math.round(innerWidth * DPR); H = Math.round(innerHeight * DPR); if (cv.width !== W || cv.height !== H) { cv.width = W; cv.height = H; } }
+function tamPixel() { return S.tam > 0 ? Math.round(S.tam * DPR) : Math.max(2, Math.floor(H * .62 / SH)); }
+function medidasCartel(p) {   // p = píxel del sprite; el cartel va en una franja bajo el escritorio
+  const q = Math.max(1, Math.round(p * .42)), q2 = Math.max(2, Math.round(q * 1.5)), nom = (S.nombre || '').toUpperCase(), sub = (S.subtitulo || '').trim();
+  const tw = Math.max(nom.length * 6 * q2, sub.length * 6 * q + (/directo|vivo|live/i.test(sub) ? 14 * q : 0)) + 14 * q, th = 3 * q + 7 * q2 + (sub ? 4 * q + 9 * q : 0) + 3 * q;
+  return { q, q2, nom, sub, tw, th };
+}
+function colocar() {
+  const p = tamPixel(), sw = SW * p, sh = SH * p, banda = S.cartel && S.nombre ? medidasCartel(p).th + 2 * p : 0;
+  const x0 = Math.round(S.posX * (W - sw)), y0 = H - sh + Math.round(3 * p) - banda; return { p, x0, y0, sw, sh, banda };
+}
+let tPrev = ahora();
+function cuadro() {
+  const t = ahora(), dt = clamp(t - tPrev, 0, .1); tPrev = t;
+  medir(); const L = colocar(), st = estadoCuadro(t, dt);
+  pintarEscena(st);
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
+  let luz = null;
+  if (S.fondo === 'almagre') {
+    const lado = (L.x0 + L.sw / 2) > W / 2 ? 1 : -1, clave = [W, H, L.y0 + MESA_Y * L.p, lado, S.hora, S.mesa].join('|');
+    if (clave !== FONDO_CLAVE) { FONDO = pintarFondo(W, H, L.y0 + MESA_Y * L.p, lado, S.hora); FONDO_CLAVE = clave; }
+    ctx.drawImage(FONDO.c, 0, 0);
+    animarFondo(ctx, t, FONDO, W, H, S.hora);
+    const P = HORAS[S.hora]; const ls = S.espejo ? lado : -lado;
+    luz = S.hora === 'noche' ? { lado: ls, col: [120, 150, 255], a: .22, mult: [176, 180, 230], borde: [255, 110, 190] } : { lado: ls, col: P.luz, a: S.hora === 'tarde' ? .3 : .2 };
+  } else if (S.fondo === 'croma') { ctx.fillStyle = S.croma; ctx.fillRect(0, 0, W, H); }
+  else ctx.clearRect(0, 0, W, H);
+  const spr = rasterizar(luz);
+  ctx.imageSmoothingEnabled = false;
+  if (S.espejo) { ctx.save(); ctx.translate(L.x0 + L.sw, L.y0); ctx.scale(-1, 1); ctx.drawImage(spr, 0, 0, L.sw, L.sh); ctx.restore(); }
+  else ctx.drawImage(spr, L.x0, L.y0, L.sw, L.sh);
+  if (st.exp === 'dormido') zetas(t, L);
+  if (S.cartel && S.nombre) cartel(L);
+  bocadillo(t, L, spr);
+  if (panelAbierto()) medidor();
+  requestAnimationFrame(cuadro);
+}
+function zetas(t, L) {
+  const p = Math.max(1, Math.round(L.p * .3));
+  for (let i = 0; i < 3; i++) { const u = ((t * .45 + i / 3) % 1), q = Math.round(p * (1 + u * .8)), x = L.x0 + (S.espejo ? 12 : 48) * L.p + u * 7 * L.p * (S.espejo ? -1 : 1), y = L.y0 + (12 - u * 11) * L.p;
+    ctx.globalAlpha = Math.sin(u * Math.PI); pxText(ctx, 'Z', x + q, y + q, q, '#1e181c'); pxText(ctx, 'Z', x, y, q, '#ffffff'); ctx.globalAlpha = 1; }
+}
+function cartel(L) {
+  const { q, q2, nom, sub, tw, th } = medidasCartel(L.p);
+  const x = Math.round(clamp(L.x0 + (L.sw - tw) / 2, 4, W - tw - 4)), y = Math.round(H - th - Math.max(2, L.p));
+  cajaPixel(ctx, x, y, tw, th, q);
+  pxText(ctx, nom, x + (tw - nom.length * 6 * q2) / 2, y + 3 * q - 2 * q2, q2, '#fff');
+  if (sub) { const roja = /directo|vivo|live/i.test(sub), sx = x + (tw - sub.length * 6 * q + (roja ? 7 * q : 0)) / 2, sy = y + 3 * q + 7 * q2 + 4 * q - 2 * q;
+    if (roja) { ctx.fillStyle = '#e8463c'; ctx.fillRect(sx - 7 * q, sy + 4 * q, 4 * q, 4 * q); }
+    pxText(ctx, sub, sx, sy, q, roja ? '#ff8a7a' : '#d8d0c8'); }
+}
+function bocadillo(t, L, spr) {
+  if (!BOC.txt) return; const dur = Math.max(1, +S.bocSeg || 6), age = t - BOC.t0, cps = 26, total = BOC.txt.length / cps;
+  if (age > total + dur) { BOC.txt = ''; return; }
+  const p = Math.max(2, Math.round(Math.min(H / 240, W / 220))), bw = Math.min(W - 24 * p, 190 * p), bh = 50 * p;
+  const bx = Math.round(clamp(L.x0 + L.sw / 2 - bw / 2, 12 * p, W - bw - 12 * p)), by = S.bocPos === 'abajo' ? H - bh - 10 * p : Math.round(Math.max(10 * p, L.y0 - bh - 4 * p));
+  const inA = clamp(age / .12), outA = clamp((total + dur - age) / .2), a = Math.min(inA, outA);
+  ctx.save(); ctx.globalAlpha = a; const hh = Math.round(bh * (.3 + .7 * inA)), yy = by + Math.round((bh - hh) / 2); cajaPixel(ctx, bx, yy, bw, hh, p);
+  if (inA >= 1) {
+    const fs = Math.max(1, Math.round(p * .75)), fw = 40 * fs, fh = 32 * fs; ctx.imageSmoothingEnabled = false;
+    if (S.espejo) { ctx.save(); ctx.translate(bx + 7 * p + fw, by + (bh - fh) / 2); ctx.scale(-1, 1); ctx.drawImage(spr, 12, 0, 40, 32, 0, 0, fw, fh); ctx.restore(); }
+    else ctx.drawImage(spr, 12, 0, 40, 32, bx + 7 * p, by + (bh - fh) / 2, fw, fh);
+    const tx = bx + 7 * p + fw + 6 * p, cpl = Math.max(4, Math.floor((bx + bw - 8 * p - tx) / (6 * p)) - 2), lines = envolver(BOC.txt, cpl);
+    let quedan = Math.floor(age * cps); const vis = []; for (const l of lines) { if (quedan <= 0) break; vis.push(l.slice(0, quedan)); quedan -= l.length + 1; }
+    pxText(ctx, '*', tx, by + 9 * p, p, '#fff'); vis.slice(-3).forEach((s, i) => pxText(ctx, s, tx + 12 * p, by + 9 * p + i * 13 * p, p, '#fff'));
+    const n = Math.floor(age * cps); if (S.bleeps && n !== BOC.ultimoBleep && n < BOC.txt.length && n % 2 === 0 && BOC.txt[n] !== ' ') { BOC.ultimoBleep = n; bleep(n); }
+  }
+  ctx.restore();
+}
+let SND = null;
+function bleep(i) { try { SND = SND || MIC.ctx || new (window.AudioContext || window.webkitAudioContext)(); MIC.ctx = MIC.ctx || SND; const t = SND.currentTime, o = SND.createOscillator(), g = SND.createGain(); o.type = 'square'; o.frequency.value = 330 * (1 + (i % 3) * .06); g.gain.setValueAtTime(.04, t); g.gain.exponentialRampToValueAtTime(.0001, t + .05); o.connect(g).connect(SND.destination); o.start(t); o.stop(t + .06); } catch (e) { } }
+
+/* ---------------------------------------------------------------------
+   PANEL
+   --------------------------------------------------------------------- */
+const $ = s => document.querySelector(s);
+const panel = $('#panel');
+const panelAbierto = () => panel.classList.contains('abierto');
+function abrirPanel(v = !panelAbierto()) { panel.classList.toggle('abierto', v); if (v) listarMics(); }
+let engT = 0; function mostrarEngranaje() { if (window.obsstudio) return; $('#engranaje').classList.add('ver'); clearTimeout(engT); engT = setTimeout(() => $('#engranaje').classList.remove('ver'), 2200); }
+$('#engranaje').onclick = () => abrirPanel(true); $('#cerrar').onclick = () => abrirPanel(false);
+function formato(k, v) { if (k === 'umbral') return v + ' dB'; if (k === 'abierta') return '+' + v + ' dB'; if (k === 'suave') return Math.round(v * 100) + ' %'; if (k === 'tam') return +v ? v + ' px' : 'auto'; if (k === 'posX') return Math.round(v * 100) + ' %'; return v; }
+function rellenarPanel() {
+  document.querySelectorAll('[data-k]').forEach(el => { const k = el.dataset.k, v = S[k]; if (el.type === 'checkbox') el.checked = !!v; else el.value = v ?? ''; });
+  document.querySelectorAll('[data-o]').forEach(el => el.textContent = formato(el.dataset.o, S[el.dataset.o]));
+  visibles(); botonesFrases(); $('#silenciar').classList.toggle('on', !!S.silencio);
+}
+function visibles() {
+  $('#filaPelaje').classList.toggle('oculto', S.pelaje !== 'propio'); $('#filaCroma').classList.toggle('oculto', S.fondo !== 'croma');
+  $('#filaHora').classList.toggle('oculto', S.fondo !== 'almagre'); $('#filaMesa').classList.toggle('oculto', false);
+  document.body.classList.toggle('ajedrez', S.fondo === 'transparente' && !window.obsstudio);
+}
+function cambiar(k, v) {
+  S[k] = v; guardar();
+  const o = document.querySelector(`[data-o="${k}"]`); if (o) o.textContent = formato(k, v);
+  if (['pelaje', 'pelajeColor', 'acento', 'mesa'].includes(k)) hacerPaleta();
+  if (k === 'micId') iniciarMic();
+  if (k === 'ayudante' || k === 'puerto') conectarAyudante();
+  if (k === 'frases') botonesFrases();
+  visibles();
+}
+document.querySelectorAll('[data-k]').forEach(el => {
+  const k = el.dataset.k, ev = (el.type === 'range' || el.tagName === 'TEXTAREA' || el.type === 'text' || el.type === 'color') ? 'input' : 'change';
+  el.addEventListener(ev, () => { let v = el.type === 'checkbox' ? el.checked : el.value; if (typeof DEF[k] === 'number') v = +v; cambiar(k, v); });
+});
+$('#botExp').innerHTML = EXPS.map(([e, n, k]) => `<button class="b" data-e="${e}">${n}<kbd>${k}</kbd></button>`).join('');
+$('#botExp').onclick = ev => { const b = ev.target.closest('button'); if (b) ponerExp(b.dataset.e); };
+function botonesFrases() { const f = frases(); $('#botFrases').innerHTML = f.map((s, i) => `<button class="b" data-i="${i}">${s.length > 22 ? s.slice(0, 21) + '…' : s}</button>`).join('').replace(/<(?!\/?(button|kbd)\b)/g, '&lt;'); }
+$('#botFrases').onclick = ev => { const b = ev.target.closest('button'); if (b) { BOC.idx = +b.dataset.i; decir(frases()[BOC.idx]); } };
+$('#silenciar').onclick = () => { cambiar('silencio', !S.silencio); $('#silenciar').classList.toggle('on', !!S.silencio); };
+$('#calibrar').onclick = async () => {
+  const b = $('#calibrar'); b.disabled = true; b.textContent = 'Silencio… 2 s'; despertarAudio();
+  const xs = [], t0 = ahora(); await new Promise(r => { const f = () => { xs.push(MIC.db); if (ahora() - t0 < 2) setTimeout(f, 30); else r(); }; f(); });
+  xs.sort((a, b) => a - b); const ruido = xs[Math.floor(xs.length * .9)] ?? -60;
+  cambiar('umbral', Math.round(clamp(ruido + 9, -80, -5))); rellenarPanel(); b.disabled = false; b.textContent = 'Calibrar (2 s en silencio)';
+};
+$('#exportar').onclick = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(S, null, 2)], { type: 'application/json' })); a.download = 'mapache-ajustes.json'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); };
+$('#importar').onclick = () => $('#archivo').click();
+$('#archivo').onchange = async e => { const f = e.target.files[0]; if (!f) return; try { const d = JSON.parse(await f.text()); S = { ...DEF, ...d }; guardar(); hacerPaleta(); rellenarPanel(); conectarAyudante(); iniciarMic(); } catch (er) { alert('Ese archivo no es de ajustes del mapache.'); } e.target.value = ''; };
+$('#restablecer').onclick = () => { if (!confirm('¿Volver a los ajustes de fábrica?')) return; S = { ...DEF }; guardar(); hacerPaleta(); rellenarPanel(); conectarAyudante(); };
+$('#demo').checked = DEMO.on; $('#demo').onchange = e => { DEMO.on = e.target.checked; };
+addEventListener('keydown', e => {
+  if (e.target.closest && e.target.closest('input,textarea,select')) return;
+  const k = e.key.toLowerCase();
+  if (k === 'h' || (k === 'escape' && panelAbierto())) { abrirPanel(k === 'escape' ? false : undefined); return; }
+  if (k === 'm') { $('#silenciar').click(); return; }
+  if (/^[0-9]$/.test(k)) { atajo(k); return; }
+  if (!e.repeat && !(AYU.ok && ahora() - AYU.ultimo < 2)) golpeTecla();
+  despertarAudio();
+});
+function despertarAudio() { if (MIC.ctx && MIC.ctx.state !== 'running') MIC.ctx.resume().then(() => $('#aviso').classList.remove('ver')).catch(() => { }); }
+$('#aviso').onclick = () => { despertarAudio(); $('#aviso').classList.remove('ver'); };
+/* medidor del micro en el panel */
+const MED = $('#medidor'), medg = MED.getContext('2d');
+function medidor() {
+  const w = MED.width, h = MED.height, x = db => clamp((db + 80) / 75) * w; medg.clearRect(0, 0, w, h);
+  const gr = medg.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, '#7aa37f'); gr.addColorStop(.7, '#d9b25a'); gr.addColorStop(1, '#c8664a');
+  medg.fillStyle = gr; medg.fillRect(0, 3, x(MIC.lvl), h - 6);
+  medg.fillStyle = '#a8452f'; medg.fillRect(x(S.umbral) - 1, 0, 3, h); medg.fillStyle = '#1e181c'; medg.fillRect(x(S.umbral + S.abierta) - 1, 0, 2, h);
+  const pt = $('#ptMando'), tx = $('#txtMando'); if (PAD.pad) { pt.className = 'punto ok'; tx.textContent = 'Mando: ' + (PAD.id || 'conectado').slice(0, 48); } else { pt.className = 'punto'; tx.textContent = 'Mando: pulsa un botón para que lo detecte.'; }
+}
+
+/* ---------------------------------------------------------------------
+   PRUEBAS (para capturas): window.__estado({exp, boca, mic, modo, raton:{nx,ny,bi,bd}, pad}) y __decir(txt)
+   --------------------------------------------------------------------- */
+window.__estado = o => { for (const k of Object.keys(FORZAR)) delete FORZAR[k]; Object.assign(FORZAR, o || {}); };
+window.__ajustes = o => { Object.assign(S, o); hacerPaleta(); rellenarPanel(); FONDO_CLAVE = ''; };
+window.__decir = (txt, age = 5) => { decir(txt); BOC.t0 = ahora() - age; };
+window.__errores = []; addEventListener('error', e => window.__errores.push(String(e.message)));
+
+hacerPaleta(); rellenarPanel(); ponerExp('normal'); conectarAyudante();
+if (S.fondo === 'transparente' && !window.obsstudio) document.body.classList.add('ajedrez');
+let visto = false; try { visto = !!localStorage.getItem(CLAVE + '-visto'); localStorage.setItem(CLAVE + '-visto', '1'); } catch (e) { }
+if (Q.get('panel') === '1' || (Q.get('panel') !== '0' && !window.obsstudio && !visto)) abrirPanel(true);
+if (Q.get('mic') !== '0') iniciarMic();
+requestAnimationFrame(cuadro);
+</script>
+</body>
+</html>
