@@ -10,6 +10,9 @@ Un VTuber de mapache en el estilo de las películas de **Almagre Studios**: spri
 - **8 expresiones** (normal, feliz, sorpresa, triste, enfadado, enamorado, guiño y dormido) con atajos de teclado.
 - **Bocadillo de diálogo** como en las películas, con el retrato del mapache y bleeps opcionales.
 - **Panel de configuración**: micrófono, pelaje, accesorios, colores, fondo, tamaño, cartel con el nombre…
+- **Dos personajes**: el mapache clásico y el **mapache con cuernos** de carnero, pasado a pixel desde el dibujo de Tata.
+
+<p align="center"><img src="assets/cuernos.png" alt="El mapache con cuernos en cuatro escenas: tarde con bocadillo, noche con mando y auriculares azules, transparente con lazo y pajarita, y día con gafas y bufanda" width="820"></p>
 
 Es **un solo archivo HTML** (`mapache.html`), sin librerías ni internet. El `ayudante.py` es opcional.
 
@@ -73,6 +76,15 @@ El fondo **Cuarto de Almagre** sirve tal cual para charlas o vídeos: graba la v
 
 Las teclas sueltas solo funcionan con la ventana del mapache activa. Durante un directo, usa `Ctrl` + `Alt` + número con el ayudante en marcha.
 
+## Los personajes
+
+En el panel → *Mapache* → **Personaje**:
+
+- **Mapache clásico**: con su antifaz de bandido, la raya en la frente y la boca en ω.
+- **Mapache con cuernos**: orejas grandes de borde claro, cuernos de carnero enroscados, ojos altos y negros, nariz con brillo, boca ondulada, bigotes y babero blanco. Al elegirlo se pone el pelaje **Plata** y se quitan los gorros y los auriculares para que se vean los cuernos. Después se pueden volver a poner.
+
+Las expresiones, los accesorios, el ratón, el teclado y el mando funcionan igual con los dos. También se puede elegir en la dirección: `?personaje=cuernos`.
+
 ## Ajustar el micrófono
 
 En el panel, la barra muestra el volumen en tiempo real:
@@ -120,7 +132,9 @@ http://127.0.0.1:8765/?fondo=transparente&pelaje=rojizo&cabeza=gorro&nombre=Tata
 
 Todo está en `mapache.html`:
 
-- `CAB_IZQ`: media cabeza dibujada a mano, carácter a carácter; se refleja para hacer la otra mitad.
+- `CAB_IZQ` y `CUE_IZQ`: media cabeza de cada personaje, dibujada a mano carácter a carácter; se refleja para hacer la otra mitad.
+- `PERSONAJES`: dónde van los ojos, la nariz y el rubor de cada uno, y qué lleva (cuernos, bigotes, babero…).
+- `cuernos()`: los cuernos de carnero.
 - `PELAJES`: las paletas de pelaje.
 - `ojos()` y `boca()`: las expresiones.
 - `armarCabeza()`: los accesorios.

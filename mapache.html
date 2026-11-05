@@ -91,10 +91,11 @@ table.atajos td:first-child{white-space:nowrap;padding-right:10px}
   </div></details>
 
   <details open><summary>Mapache</summary><div class="cuerpo">
+    <label class="f"><span>Personaje</span><select data-k="personaje"><option value="clasico">Mapache clásico</option><option value="cuernos">Mapache con cuernos</option></select></label>
     <label class="f"><span>Nombre</span><input type="text" data-k="nombre" maxlength="24"></label>
     <label class="f"><span>Pelaje</span><select data-k="pelaje">
       <option value="gris">Gris clásico</option><option value="marron">Marrón tierra</option><option value="rojizo">Rojizo</option>
-      <option value="nieve">Nieve</option><option value="medianoche">Medianoche</option><option value="propio">Mi color…</option></select></label>
+      <option value="nieve">Nieve</option><option value="plata">Plata</option><option value="medianoche">Medianoche</option><option value="propio">Mi color…</option></select></label>
     <label class="f" id="filaPelaje"><span>Color del pelaje</span><input type="color" data-k="pelajeColor"></label>
     <label class="f"><span>Cabeza</span><select data-k="cabeza">
       <option value="auriculares">Auriculares con micro</option><option value="gorro">Gorro de lana</option><option value="gorra">Gorra</option>
@@ -193,7 +194,7 @@ const ahora = () => performance.now() / 1000;
    AJUSTES (se guardan en localStorage; si el navegador no deja, funciona igual sin guardar)
    --------------------------------------------------------------------- */
 const DEF = {
-  nombre: 'Tata', subtitulo: '', cartel: true,
+  nombre: 'Tata', subtitulo: '', cartel: true, personaje: 'clasico',
   pelaje: 'gris', pelajeColor: '#8d8a99', cabeza: 'auriculares', cara: 'ninguna', cuello: 'ninguno', acento: '#d0533f',
   rubor: true, parpadeo: true, respirar: true,
   micId: '', umbral: -46, abierta: 12, suave: .45, rebote: '1', silencio: false,
@@ -217,6 +218,7 @@ const PELAJES = {
   marron:     { G: [160, 128, 98], g: [122, 92, 70], M: [66, 48, 42], W: [244, 234, 216], w: [210, 196, 174], I: [118, 80, 70], H: [74, 56, 48], h: [54, 40, 36] },
   rojizo:     { G: [204, 112, 62], g: [158, 78, 44], M: [78, 42, 36], W: [248, 236, 218], w: [214, 196, 176], I: [140, 70, 56], H: [76, 46, 40], h: [56, 34, 30] },
   nieve:      { G: [228, 226, 234], g: [188, 186, 200], M: [116, 112, 132], W: [255, 255, 255], w: [216, 214, 222], I: [214, 150, 162], H: [128, 122, 140], h: [100, 96, 112] },
+  plata:      { G: [186, 186, 190], g: [150, 150, 158], M: [102, 102, 108], W: [238, 238, 240], w: [210, 210, 216], I: [92, 92, 98], H: [70, 70, 76], h: [52, 52, 58] },
   medianoche: { G: [88, 96, 132], g: [62, 68, 100], M: [40, 38, 58], W: [214, 220, 238], w: [170, 178, 204], I: [120, 90, 130], H: [48, 46, 66], h: [36, 34, 50] },
 };
 function pelajePropio(hex) {
@@ -230,6 +232,7 @@ const MESAS = {
 };
 let PAL = new Map();
 function hacerPaleta() {
+  PJ = PERSONAJES[S.personaje] || PERSONAJES.clasico;
   const f = S.pelaje === 'propio' ? pelajePropio(S.pelajeColor) : PELAJES[S.pelaje] || PELAJES.gris;
   const A = hex2rgb(S.acento), m = MESAS[S.mesa] || MESAS.madera;
   const p = {
@@ -238,6 +241,7 @@ function hacerPaleta() {
     A, a: shc(A, -.3), X: shc(A, .45),
     Q: [58, 56, 70], q: [210, 206, 214], L: [236, 234, 240], l: [184, 182, 196], N: [52, 70, 84], n: [38, 52, 64],
     C: [70, 72, 88], c: [50, 52, 66], k: [34, 32, 42], J: [150, 150, 166],
+    O: [124, 80, 30], o: [90, 56, 20], U: [166, 114, 52], u: [60, 36, 14],
     1: [244, 200, 64], 2: [222, 70, 70], 3: [96, 196, 98], 4: [80, 140, 230],
     ...f, ...m,
   };
@@ -306,16 +310,51 @@ const CAB_IZQ = [
   '..KWWWWWWWWWWWWWW',
   '...KKWWWWWWWWWWWW',
   '.....KKKKKKKKKKKK'];
-const CAB = CAB_IZQ.map(r => r + r.split('').reverse().join(''));
-const HW = 34, HH = 23, HM = 4;                    // margen alrededor para accesorios
+/* MAPACHE CON CUERNOS (del dibujo de Tata): orejas grandes de borde claro, cara blanca, antifaz gris unido por
+   la raya de la frente, ojos altos sin brillo, nariz negra con brillo, boca ondulada, bigotes y babero blanco.
+   Los cuernos de carnero se pintan aparte (cuernos()) por encima de todo. 34×24 celdas. */
+const CUE_IZQ = [
+  '.KKK.............',
+  'KGGGKK...........',
+  'KGIIGGK..........',
+  'KGIIIIGK.........',
+  'KGIwIIIGK........',
+  'KGIIwIIIGKKKKKKKK',
+  'KGIIIwIIGWWWMMMMM',
+  '.KGIIIIGWWWWWMMMM',
+  '.KGGIIGWWWWWWWWMM',
+  'KWGGGWWWWWWWWWWWM',
+  'KWWWMMMMMMMMWWWWM',
+  'KWMMMMMMMMMMMMMMM',
+  'KWMMMMMMMMMMMMMMM',
+  'KMMMMMMMMMMMMMMMM',
+  'KMMMMMMMMMMMMMMMM',
+  'KWMMMMMMMMMMMMMKK',
+  'KWWMMMMMMMMMWWKKK',
+  '.KWWMMMMMWWWWWWKK',
+  'KWWWWWWWWWWWWWWWK',
+  'KGWWWWWWWWWWWWWWW',
+  '.KGGWWWWWWWWWWWWW',
+  'KGGGWWWWWWWWWWWWW',
+  '.KGGGWWWWWWWWWWWW',
+  '..KKGGWWWWWWWWWWW'];
+const espejar = filas => filas.map(r => r + r.split('').reverse().join(''));
+const CAB = espejar(CAB_IZQ);
+const PERSONAJES = {
+  clasico: { cab: CAB, ojos: [[7, 12], [24, 12]], alto: 2, brillo: true, cejas: [0, 0], nariz: [15, 17], raya: true, rubor: [[2, 18], [3, 18], [4, 18], [3, 17]] },
+  cuernos: { cab: espejar(CUE_IZQ), ojos: [[9, 11], [22, 11]], alto: 4, brillo: false, cejas: [2, -1], nariz: null, raya: false, rubor: [[3, 18], [4, 18], [5, 18], [4, 19]],
+    ola: 1, bigotes: [[12, 17], [11, 18], [10, 18], [9, 18], [8, 18], [10, 20], [9, 20], [8, 20], [7, 21], [6, 21]], brilloNariz: [[15, 16], [16, 16]], cuernos: true, babero: true },
+};
+let PJ = PERSONAJES.clasico;
+const HW = 34, HH = 24, HM = 8;                    // margen alrededor para accesorios y cuernos
 const CABEZA = new Rejilla(HW + HM * 2, HH + HM * 2 + 2);
-const OJOS = [[7, 12], [24, 12]];
 /* pintar en coordenadas de la cabeza base */
 const hs = (x, y, c) => CABEZA.set(x + HM, y + HM, c);
 const hg = (x, y) => CABEZA.get(x + HM, y + HM);
 
 function ojos(exp, ex, ey, cerrado) {
-  OJOS.forEach(([x0, y0], lado) => {
+  if (PJ.alto > 2) return ojosAltos(exp, ex, ey, cerrado);
+  PJ.ojos.forEach(([x0, y0], lado) => {
     const x = x0 + ex, y = y0 + ey, b = 'M';
     const put = (dx, dy, c) => hs(x + dx, y + dy, c);
     let tipo = exp;
@@ -330,8 +369,30 @@ function ojos(exp, ex, ey, cerrado) {
     if (tipo === 'triste' && lado === 0) { put(2, 2, 'B'); put(2, 3, 'B'); }
   });
   /* cejas en el blanco de encima del antifaz */
-  if (exp === 'enfadado') for (const [x, y] of [[5, 9], [6, 9], [7, 10], [8, 10], [9, 10]]) { hs(x, y, 'K'); hs(HW - 1 - x, y, 'K'); }
-  if (exp === 'triste') for (const [x, y] of [[5, 10], [6, 10], [7, 10], [8, 9], [9, 9]]) { hs(x, y, 'K'); hs(HW - 1 - x, y, 'K'); }
+  cejas(exp);
+}
+function cejas(exp) {
+  const [dx, dy] = PJ.cejas;
+  if (exp === 'enfadado') for (const [x, y] of [[5, 9], [6, 9], [7, 10], [8, 10], [9, 10]]) { hs(x + dx, y + dy, 'K'); hs(HW - 1 - x - dx, y + dy, 'K'); }
+  if (exp === 'triste') for (const [x, y] of [[5, 10], [6, 10], [7, 10], [8, 9], [9, 9]]) { hs(x + dx, y + dy, 'K'); hs(HW - 1 - x - dx, y + dy, 'K'); }
+}
+/* ojos altos (3×4) del mapache con cuernos: negros y sin brillo, como en el dibujo */
+function ojosAltos(exp, ex, ey, cerrado) {
+  PJ.ojos.forEach(([x0, y0], lado) => {
+    const x = x0 + ex, y = y0 + ey, b = 'M', put = (dx, dy, c) => hs(x + dx, y + dy, c);
+    const forma = filas => filas.forEach((r, j) => r.split('').forEach((c, i) => { if (c !== '.') put(i, j, c === 'b' ? b : c); }));
+    let tipo = exp;
+    if (exp === 'guino' && lado === 1) tipo = 'feliz';
+    if (cerrado && tipo !== 'feliz' && tipo !== 'enamorado') tipo = 'cerrado';
+    if (tipo === 'cerrado' || tipo === 'dormido') return forma(['...', '...', 'KKK']);
+    if (tipo === 'feliz') return forma(['...', '.K.', 'K.K']);
+    if (tipo === 'enamorado') return forma(['PbP', 'PPP', 'bPb']);
+    if (tipo === 'sorpresa') return forma(['TTT', 'TKT', 'TKT', 'TTT']);
+    if (tipo === 'enfadado') return forma(lado ? ['Kbb', 'KKb', 'KKK', 'KKK'] : ['bbK', 'bKK', 'KKK', 'KKK']);
+    forma(['KKK', 'KKK', 'KKK', 'KKK']);
+    if (tipo === 'triste' && lado === 0) { put(1, 4, 'B'); put(1, 5, 'B'); }
+  });
+  cejas(exp);
 }
 function boca(nivel, exp) {
   const K = (x, y) => hs(x, y, 'K');
@@ -353,6 +414,7 @@ function boca(nivel, exp) {
   if (exp === 'enfadado') { for (let x = 14; x <= 19; x++) K(x, 20); return; }
   if (exp === 'triste') { K(16, 19); K(17, 19); for (let x = 14; x <= 19; x++) K(x, 20); K(13, 21); K(20, 21); hs(14, 20, 'W'); hs(19, 20, 'W'); K(14, 21); K(19, 21); return; }
   if (exp === 'feliz' || exp === 'enamorado' || exp === 'guino') { K(16, 19); K(17, 19); K(13, 19); K(20, 19); K(14, 20); K(19, 20); hs(15, 20, 'D'); hs(16, 20, 'R'); hs(17, 20, 'R'); hs(18, 20, 'D'); K(15, 21); K(16, 21); K(17, 21); K(18, 21); return; }
+  if (PJ.ola) { for (const [x, y] of [[12, 19], [13, 20], [14, 21], [15, 20], [16, 19], [17, 19], [18, 20], [19, 21], [20, 20], [21, 19]]) K(x, y + PJ.ola); return; }   // 〰
   K(16, 19); K(17, 19); K(13, 19); K(20, 19); K(14, 20); K(15, 20); K(18, 20); K(19, 20);   // ω
 }
 /* accesorios de la cabeza: se pintan en una capa con su propio contorno y se pegan sobre la cabeza */
@@ -364,15 +426,18 @@ function accesorio(dibujo) {
   CABEZA.pegar(ACCB, 0, 0); CABEZA.pegar(ACC, 0, 0);
 }
 function armarCabeza(st) {
-  CABEZA.clear(); CABEZA.stamp(CAB, HM, HM);
-  hs(15, 17, 'V');                                             // brillo de la nariz
+  CABEZA.clear(); CABEZA.stamp(PJ.cab, HM, HM);
+  if (PJ.nariz) hs(PJ.nariz[0], PJ.nariz[1], 'V');            // brillo de la nariz
   const exp = st.exp;
   ojos(exp, st.ex, st.ey, st.cerrado);
-  if (S.rubor || exp === 'enamorado') for (const [x, y] of [[2, 18], [3, 18], [4, 18], [3, 17]]) { hs(x, y, 'E'); hs(HW - 1 - x, y, 'E'); }
+  if (PJ.brilloNariz) for (const [x, y] of PJ.brilloNariz) hs(x, y, 'T');
+  if (PJ.bigotes) for (const [x, y] of PJ.bigotes) { hs(x, y, 'J'); hs(HW - 1 - x, y, 'J'); }
+  if (S.rubor || exp === 'enamorado') for (const [x, y] of PJ.rubor) { hs(x, y, 'E'); hs(HW - 1 - x, y, 'E'); }
   boca(st.boca, exp);
   if (S.cara === 'gafas') {
-    for (const [x0, y0] of OJOS) { const x = x0 - 1, y = y0 - 2; for (let i = 1; i <= 3; i++) { hs(x + i, y, 'F'); hs(x + i, y + 4, 'F'); } for (let j = 1; j <= 3; j++) { hs(x, y + j, 'F'); hs(x + 4, y + j, 'F'); } }
-    for (let x = 12; x <= 21; x++) hs(x, 11, 'F');
+    const a = PJ.alto;
+    for (const [x0, y0] of PJ.ojos) { const x = x0 - 1, y = y0 - (a > 2 ? 1 : 2), hh = a > 2 ? a + 1 : 4; for (let i = 1; i <= 3; i++) { hs(x + i, y, 'F'); hs(x + i, y + hh, 'F'); } for (let j = 1; j < hh; j++) { hs(x, y + j, 'F'); hs(x + 4, y + j, 'F'); } }
+    const yp = PJ.ojos[0][1] + (PJ.alto > 2 ? 1 : -1); for (let x = PJ.ojos[0][0] + 4; x <= PJ.ojos[1][0] - 2; x++) hs(x, yp, 'F');
   }
   const cab = S.cabeza;
   if (cab === 'auriculares') accesorio(P => {
@@ -393,10 +458,32 @@ function armarCabeza(st) {
     P.p(16, 1, 'a'); P.p(17, 1, 'a');
   });
   else if (cab === 'lazo') accesorio(P => {
-    P.stamp(['AA...AA', 'XAA.AAa', 'XAAAAAa', 'XAA.AAa', 'AA...AA'], 22, 0); P.p(25, 2, 'a');
+    const [lx, ly] = PJ.cuernos ? [27, 4] : [22, 0];   // con cuernos, el lazo va al borde de la oreja
+    P.stamp(['AA...AA', 'XAA.AAa', 'XAAAAAa', 'XAA.AAa', 'AA...AA'], lx, ly); P.p(lx + 3, ly + 2, 'a');
   });
-  if (st.lado) {   // mirar a un lado: la cabeza se ve 1 celda girada (la raya del medio se corre)
+  if (PJ.cuernos) accesorio(P => cuernos(P));
+  if (st.lado && PJ.raya) {   // mirar a un lado: la cabeza se ve 1 celda girada (la raya del medio se corre)
     for (let y = 6; y <= 13; y++) { const xs = st.lado > 0 ? 17 : 16; if (hg(xs, y) === 'g') { hs(xs, y, 'G'); hs(st.lado > 0 ? 15 : 18, y, hg(st.lado > 0 ? 15 : 18, y) === 'G' ? 'g' : hg(st.lado > 0 ? 15 : 18, y)); } }
+  }
+}
+/* cuernos de carnero: una espiral con estrías y la punta hacia arriba, reflejada para el otro lado */
+function cuernos(P) {
+  for (const s of [1, -1]) {
+    const X = x => s > 0 ? x : HW - 1 - x, cx0 = 9.8, cy0 = 1.9, R = 4.5;
+    /* la espiral: una bola con estrías en arco (como los segmentos del dibujo), luz arriba a la izquierda */
+    for (let y = -5; y <= 7; y++) for (let x = 3; x <= 16; x++) {
+      const dx = x - cx0, dy = y - cy0, d = Math.hypot(dx, dy); if (d > R) continue;
+      const an = Math.atan2(dy, dx); let c = 'O';
+      if (dx * .6 + dy > 2.4) c = 'o'; else if (dx + dy < -3.6) c = 'U';
+      if (Math.abs(d - 2.6) < .5 && (an < -2.2 || an > .5)) c = 'u';          // arco interior
+      if (Math.abs(dx - dy * .35 + 1.2) < .5 && dy > 1.4) c = 'u';             // estría que baja
+      if (Math.abs(dy + dx * .3 + 1.6) < .5 && dx > 1) c = 'u';                // estría hacia fuera
+      P.p(X(x), y, c);
+    }
+    /* el gancho: fino, sale del borde de fuera y se curva hacia dentro (no un cono en el centro) */
+    const G = [[5.9, -.2], [5.3, -2.7], [6.1, -4.7], [7.9, -5.8], [10, -5.6]];
+    for (let i = 0; i < G.length - 1; i++) for (let k = 0; k <= 4; k++) { const u = (i + k / 4) / (G.length - 1), px = lerp(G[i][0], G[i + 1][0], k / 4), py = lerp(G[i][1], G[i + 1][1], k / 4), r = lerp(1.35, .5, u);
+      P.disco(X(px), py, r, (x, y) => (y > py + .3 || (s > 0 ? x > px + .4 : x < X(px) - .4)) ? 'o' : (u > .2 && u < .3 ? 'u' : 'O')); }
   }
 }
 
@@ -418,7 +505,10 @@ function pintarEscena(st) {
   /* el cuerpo */
   part(P => {
     P.elipse(32, 47 + b, 14.5, 19, (x, y) => x > 41 ? 'g' : 'G');
-    P.elipse(32, 46 + b, 8, 12, (x, y) => x > 37 ? 'w' : 'W');
+    if (PJ.babero) {   // babero blanco desde la barbilla, con el borde deshilachado
+      P.rect(25, 27 + b, 38, 33 + b, 'W');
+      P.elipse(32, 41 + b, 8.6, 13, (x, y) => (Math.abs(x - 32) > 8.2 && (x + y) & 1) ? 'G' : x > 38 ? 'w' : 'W');
+    } else P.elipse(32, 46 + b, 8, 12, (x, y) => x > 37 ? 'w' : 'W');
   }, { corte: MESA_Y });
   if (S.cuello === 'bufanda') part(P => {
     P.elipse(32, 29.5 + b, 13, 2.6, x => (x >> 1) & 1 ? 'a' : 'A');
@@ -940,7 +1030,13 @@ function visibles() {
   document.body.classList.toggle('ajedrez', S.fondo === 'transparente' && !window.obsstudio);
 }
 function cambiar(k, v) {
-  S[k] = v; guardar();
+  S[k] = v;
+  if (k === 'personaje') {   // cada personaje llega con su pelaje y sin tapar lo que lo hace suyo
+    if (v === 'cuernos') { S.pelaje = 'plata'; if (S.cabeza === 'auriculares' || S.cabeza === 'gorro' || S.cabeza === 'gorra') S.cabeza = 'ninguno'; }
+    else if (S.pelaje === 'plata') S.pelaje = 'gris';
+    hacerPaleta(); rellenarPanel();
+  }
+  guardar();
   const o = document.querySelector(`[data-o="${k}"]`); if (o) o.textContent = formato(k, v);
   if (['pelaje', 'pelajeColor', 'acento', 'mesa'].includes(k)) hacerPaleta();
   if (k === 'micId') iniciarMic();
