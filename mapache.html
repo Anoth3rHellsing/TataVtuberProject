@@ -468,13 +468,13 @@ function armarCabeza(st) {
 }
 /* cuernos: media luna curva y puntiaguda (gruesa en la base, afilada en la punta) con estrías, reflejada al otro lado */
 function cuernos(P) {
-  const C = [[11.6, 4.6], [9.6, 1.6], [8.1, -1.4], [7.8, -4], [8.7, -6.2], [10, -7.2]];   // de la base a la punta
+  const k = .62, C = [[11.6, 4.6], [9.6, 1.6], [8.1, -1.4], [7.8, -4], [8.7, -6.2], [10, -7.2]].map(([x, y]) => [11.6 + (x - 11.6) * k, 4.6 + (y - 4.6) * k]);   // de la base a la punta; k = tamaño (pequeños: un detalle)
   const n = 40, pts = [];
   for (let i = 0; i <= n; i++) { const f = i / n * (C.length - 1), k = Math.min(C.length - 2, Math.floor(f)), t = f - k; pts.push([lerp(C[k][0], C[k + 1][0], t), lerp(C[k][1], C[k + 1][1], t), i / n]); }
   for (const s of [1, -1]) {
     const X = x => s > 0 ? x : HW - 1 - x;
     for (const [px, py, u] of pts) {
-      const r = lerp(2.5, .2, u ** .8), estria = [.2, .38, .56, .72].some(e => Math.abs(u - e) < .02);
+      const r = lerp(1.9, .2, u ** .8), estria = [.3, .58].some(e => Math.abs(u - e) < .025);
       P.disco(X(px), py, r, (x, y) => { const fuera = s > 0 ? x < px - r * .35 : x > X(px) + r * .35;
         return estria ? 'u' : fuera ? 'o' : (s > 0 ? x > px + r * .45 : x < X(px) - r * .45) ? 'U' : 'O'; });
     }
