@@ -81,7 +81,7 @@ Las teclas sueltas solo funcionan con la ventana del mapache activa. Durante un 
 En el panel → *Mapache* → **Personaje**:
 
 - **Mapache clásico**: con su antifaz de bandido, la raya en la frente y la boca en ω.
-- **Mapache con cuernos**: orejas grandes de borde claro, cuernos de carnero enroscados, ojos altos y negros, nariz con brillo, boca ondulada, bigotes y babero blanco. Al elegirlo se pone el pelaje **Plata** y se quitan los gorros y los auriculares para que se vean los cuernos. Después se pueden volver a poner.
+- **Mapache con cuernos**: orejas grandes de borde claro, cuernos curvos y puntiagudos con estrías, ojos altos y negros, nariz con brillo, boca ondulada, bigotes y babero blanco. Al elegirlo se pone el pelaje **Plata** y se quitan los gorros y los auriculares para que se vean los cuernos. Después se pueden volver a poner.
 
 Las expresiones, los accesorios, el ratón, el teclado y el mando funcionan igual con los dos. También se puede elegir en la dirección: `?personaje=cuernos`.
 
@@ -134,7 +134,7 @@ Todo está en `mapache.html`:
 
 - `CAB_IZQ` y `CUE_IZQ`: media cabeza de cada personaje, dibujada a mano carácter a carácter; se refleja para hacer la otra mitad.
 - `PERSONAJES`: dónde van los ojos, la nariz y el rubor de cada uno, y qué lleva (cuernos, bigotes, babero…).
-- `cuernos()`: los cuernos de carnero.
+- `cuernos()`: los cuernos (una media luna que se afila hacia la punta).
 - `PELAJES`: las paletas de pelaje.
 - `ojos()` y `boca()`: las expresiones.
 - `armarCabeza()`: los accesorios.

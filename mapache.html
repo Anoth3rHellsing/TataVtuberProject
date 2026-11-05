@@ -312,7 +312,7 @@ const CAB_IZQ = [
   '.....KKKKKKKKKKKK'];
 /* MAPACHE CON CUERNOS (del dibujo de Tata): orejas grandes de borde claro, cara blanca, antifaz gris unido por
    la raya de la frente, ojos altos sin brillo, nariz negra con brillo, boca ondulada, bigotes y babero blanco.
-   Los cuernos de carnero se pintan aparte (cuernos()) por encima de todo. 34×24 celdas. */
+   Los cuernos (curvos y puntiagudos) se pintan aparte (cuernos()) por encima de todo. 34×24 celdas. */
 const CUE_IZQ = [
   '.KKK.............',
   'KGGGKK...........',
@@ -466,24 +466,18 @@ function armarCabeza(st) {
     for (let y = 6; y <= 13; y++) { const xs = st.lado > 0 ? 17 : 16; if (hg(xs, y) === 'g') { hs(xs, y, 'G'); hs(st.lado > 0 ? 15 : 18, y, hg(st.lado > 0 ? 15 : 18, y) === 'G' ? 'g' : hg(st.lado > 0 ? 15 : 18, y)); } }
   }
 }
-/* cuernos de carnero: una espiral con estrías y la punta hacia arriba, reflejada para el otro lado */
+/* cuernos: media luna curva y puntiaguda (gruesa en la base, afilada en la punta) con estrías, reflejada al otro lado */
 function cuernos(P) {
+  const C = [[11.6, 4.6], [9.6, 1.6], [8.1, -1.4], [7.8, -4], [8.7, -6.2], [10, -7.2]];   // de la base a la punta
+  const n = 40, pts = [];
+  for (let i = 0; i <= n; i++) { const f = i / n * (C.length - 1), k = Math.min(C.length - 2, Math.floor(f)), t = f - k; pts.push([lerp(C[k][0], C[k + 1][0], t), lerp(C[k][1], C[k + 1][1], t), i / n]); }
   for (const s of [1, -1]) {
-    const X = x => s > 0 ? x : HW - 1 - x, cx0 = 9.8, cy0 = 1.9, R = 4.5;
-    /* la espiral: una bola con estrías en arco (como los segmentos del dibujo), luz arriba a la izquierda */
-    for (let y = -5; y <= 7; y++) for (let x = 3; x <= 16; x++) {
-      const dx = x - cx0, dy = y - cy0, d = Math.hypot(dx, dy); if (d > R) continue;
-      const an = Math.atan2(dy, dx); let c = 'O';
-      if (dx * .6 + dy > 2.4) c = 'o'; else if (dx + dy < -3.6) c = 'U';
-      if (Math.abs(d - 2.6) < .5 && (an < -2.2 || an > .5)) c = 'u';          // arco interior
-      if (Math.abs(dx - dy * .35 + 1.2) < .5 && dy > 1.4) c = 'u';             // estría que baja
-      if (Math.abs(dy + dx * .3 + 1.6) < .5 && dx > 1) c = 'u';                // estría hacia fuera
-      P.p(X(x), y, c);
+    const X = x => s > 0 ? x : HW - 1 - x;
+    for (const [px, py, u] of pts) {
+      const r = lerp(2.5, .2, u ** .8), estria = [.2, .38, .56, .72].some(e => Math.abs(u - e) < .02);
+      P.disco(X(px), py, r, (x, y) => { const fuera = s > 0 ? x < px - r * .35 : x > X(px) + r * .35;
+        return estria ? 'u' : fuera ? 'o' : (s > 0 ? x > px + r * .45 : x < X(px) - r * .45) ? 'U' : 'O'; });
     }
-    /* el gancho: fino, sale del borde de fuera y se curva hacia dentro (no un cono en el centro) */
-    const G = [[5.9, -.2], [5.3, -2.7], [6.1, -4.7], [7.9, -5.8], [10, -5.6]];
-    for (let i = 0; i < G.length - 1; i++) for (let k = 0; k <= 4; k++) { const u = (i + k / 4) / (G.length - 1), px = lerp(G[i][0], G[i + 1][0], k / 4), py = lerp(G[i][1], G[i + 1][1], k / 4), r = lerp(1.35, .5, u);
-      P.disco(X(px), py, r, (x, y) => (y > py + .3 || (s > 0 ? x > px + .4 : x < X(px) - .4)) ? 'o' : (u > .2 && u < .3 ? 'u' : 'O')); }
   }
 }
 
